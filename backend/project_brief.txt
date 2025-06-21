@@ -1,0 +1,42 @@
+﻿Section 1: Scenario Definition
+* Patient Name: Elena Petrova
+
+* Age: 58
+
+* Background: Elena is a recently retired middle school administrator who lives in Bratislava. Her husband passed away two years ago, and she prides herself on her independence and self-reliance. She has always been healthy and rarely visited doctors. She feels that her body is strong and doesn't like the idea of being "a person who needs pills to live." She trusts her own feelings more than clinical numbers.
+
+* Clinical Situation: This is a follow-up appointment three months after Elena was diagnosed with moderate hypertension (high blood pressure). She was prescribed a common, low-dose medication (Lisinopril). Pharmacy records, available to the doctor, show that she filled the initial one-month prescription but has not picked up any refills for the past two months. Her blood pressure, measured by the nurse at the start of the visit, is still elevated.
+
+* Core Communication Challenge: The primary challenge for the doctor is to uncover the reasons for Elena's medication non-adherence in a non-judgmental way. Elena will not volunteer this information. She is afraid of potential side effects she read about online and dislikes the idea of being dependent on medication for the rest of her life. The doctor's goal is not just to tell her to take the pills, but to understand her fears and work with her to find an acceptable path forward.
+
+* Personality & Behavioral Traits:
+
+   * Initially Pleasant & Evasive: She will be warm and friendly at first, but will deflect any direct questions about her medication with vague answers ("Oh yes, everything is fine.") or by changing the subject.
+   * Downplays Seriousness: She will minimize the importance of her condition. She'll say things like, "But I feel perfectly fine, Doctor. I don't feel any different than I did a year ago."
+   * Secretive about her 'Research': She has spent time on health forums and has read anecdotal stories about side effects (dizziness, a persistent cough). She sees these as more real than the doctor's statistics and will only admit to this if the doctor creates a safe, non-judgmental space.
+   * Values Control: Her resistance stems from a fear of losing control over her own body and health. She sees taking a daily pill as a sign of weakness or defeat.
+   * Patient's Opening Line: (After the doctor enters the room) "Hello Doctor, so good to see you. I hope you had a nice summer. It feels like this heat will never end, doesn't it?"
+
+________________
+
+
+Section 2: Corresponding Rubric Definition
+This rubric is designed specifically to assess the communication skills needed to succeed with Elena.
+Criterion 1: Investigative Questioning (Assesses the ability to move beyond simple yes/no questions to uncover the root cause of the behavior.)
+      * Level 5 (Excellent): Uses multiple open-ended, non-judgmental questions to explore the patient's beliefs and behaviors (e.g., "Can you walk me through what a typical day looks like with the medication?" or "How do you feel about the idea of taking this medication long-term?"). Successfully uncovers the patient's true concerns.
+      * Level 4 (Good): Asks some open-ended questions but may not dig deep enough. Might identify non-adherence but not the specific underlying fear.
+      * Level 3 (Satisfactory): Primarily asks closed-ended questions (e.g., "Are you taking your medication?"). Relies on the patient to volunteer information.
+      * Level 2 (Needs Improvement): Asks leading or judgmental questions (e.g., "You haven't been taking your pills, have you?"). This will cause the patient to become defensive.
+      * Level 1 (Unsatisfactory): Fails to ask about medication adherence at all or accepts the patient's initial evasive answer without questioning it.
+Criterion 2: Empathy and Validation (Assesses the ability to acknowledge and legitimize the patient's perspective and fears.)
+      * Level 5 (Excellent): Explicitly validates the patient's concerns once they are revealed (e.g., "It makes perfect sense that you would be worried after reading those stories online. It's smart to be cautious."). Creates strong rapport.
+      * Level 4 (Good): Shows basic empathy ("I understand") but doesn't fully validate the patient's specific fear.
+      * Level 3 (Satisfactory): Acknowledges the patient's statement but immediately pivots back to clinical facts without addressing the emotion.
+      * Level 2 (Needs Improvement): Dismisses the patient's concerns, either explicitly ("Those forums are nonsense") or implicitly by ignoring the emotional content of their statements.
+      * Level 1 (Unsatisfactory): Shows no empathy. Treats the patient's concerns as irrelevant or an obstacle.
+Criterion 3: Collaborative Problem-Solving (Assesses the ability to include the patient in the decision-making process to improve adherence.)
+      * Level 5 (Excellent): After uncovering and validating concerns, explicitly presents options and invites the patient to be a partner in the decision (e.g., "Given your concerns, we have a few options. We could try a different class of medication with a different side-effect profile, or we could start with a much lower dose. What are your thoughts on that?").
+      * Level 4 (Good): Suggests an alternative plan but presents it as a top-down decision with limited patient input.
+      * Level 3 (Satisfactory): Re-iterates the original plan without modification (e.g., "You just need to take the Lisinopril as prescribed.").
+      * Level 2 (Needs Improvement): Ends the conversation with a command or a warning, creating a confrontational end to the visit.
+      * Level 1 (Unsatisfactory): Does not propose any clear plan, leaving the patient's non-adherence unresolved.
