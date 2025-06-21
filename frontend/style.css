@@ -87,6 +87,10 @@ header h1 {
   gap: 0.5rem;
 }
 
+#message-form button {
+  flex-shrink: 0; /* Prevents the 'Send' button from shrinking on mobile */
+}
+
 #message-input {
   flex: 1;
   padding: 0.6rem 0.8rem;
