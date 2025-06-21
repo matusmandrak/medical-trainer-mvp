@@ -232,3 +232,23 @@ button:disabled {
   line-height: 1.5;
   color: #374151; /* gray-700 */
 }
+
+/* ---------------- Responsive: Mobile ---------------- */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem;
+  }
+
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+
+  .app-sidebar h1 {
+    font-size: 1.5rem;
+  }
+}
