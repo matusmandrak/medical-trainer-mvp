@@ -87,14 +87,16 @@ async def evaluate_endpoint(request: EvaluationRequest):
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="Rubric definition not found.")
 
-    # Build the master prompt
+    # Build the ultra-strict master prompt
     master_prompt = (
-        "You are an automated evaluation engine. Your sole function is to analyze a conversation transcript and return a single, valid JSON object. Do not include any text outside of the JSON object. "
-        "Evaluate only the lines prefixed with 'Doctor:'.\n\n"
+        "You are an automated evaluation engine. Your entire response must be a single, valid JSON object and nothing else. "
+        "First, think step-by-step through the transcript and for each criterion in the rubric, write down your reasoning for the score. "
+        "After your internal analysis, you must format your final output as a single JSON object with the exact keys: 'empathy_score' (integer), 'investigative_questioning_score' (integer), 'collaborative_problem_solving_score' (integer), and 'ai_justifications'.\n\n"
+        "The 'ai_justifications' value MUST be another JSON object containing a key for each score criterion with your detailed written justification as its string value. Do not omit any part of this structure.\n\n"
         f"Here is the rubric:\n{rubric_definition}\n\n"
-        "Based on the rubric, provide your response in a single, valid JSON object with these exact keys. The `ai_justifications` key must contain an object with justifications for each score.\n"
         "EXAMPLE of a valid response format:\n"
-        '{"empathy_score": 3, "investigative_questioning_score": 5, "collaborative_problem_solving_score": 2, "ai_justifications": {"empathy_score": "The doctor showed some empathy but did not validate the patient\'s core concern.", "investigative_questioning_score": "The doctor used excellent open-ended questions to discover the root cause.", "collaborative_problem_solving_score": "The doctor did not propose a collaborative plan."}}'
+        '{"empathy_score": 1, "investigative_questioning_score": 2, "collaborative_problem_solving_score": 1, "ai_justifications": {"empathy_score": "The doctor was dismissive and did not acknowledge the patient\'s concerns.", "investigative_questioning_score": "The questions were mostly closed-ended and did not explore the patient\'s perspective.", "collaborative_problem_solving_score": "The doctor issued a command rather than suggesting a collaborative plan."}}\n\n'
+        "Now, analyze the following transcript and provide your complete JSON response:\n"
     )
 
     transcript_text = request.transcript
