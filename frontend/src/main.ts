@@ -97,12 +97,17 @@ async function handleEvaluation() {
   evaluateButton.textContent = 'Evaluating...'
 
   try {
+    // Build transcript string with speaker prefixes
+    const transcript = conversationHistory
+      .map((msg, idx) => `${idx % 2 === 0 ? 'Doctor' : 'Patient'}: ${msg}`)
+      .join('\n')
+
     const response = await fetch(`${API_BASE_URL}/api/evaluate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ transcript: conversationHistory }),
+      body: JSON.stringify({ transcript }),
     })
 
     if (!response.ok) {

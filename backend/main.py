@@ -30,7 +30,7 @@ class ChatMessage(BaseModel):
 
 
 class EvaluationRequest(BaseModel):
-    transcript: List[str]
+    transcript: str
 
 
 @app.get("/")
@@ -44,7 +44,11 @@ async def chat_endpoint(chat: ChatMessage):
     # Load persona prompt
     try:
         with open(os.path.join(os.path.dirname(__file__), "project_brief.txt"), "r", encoding="utf-8") as f:
-            persona_prompt = f.read()
+            persona_prompt = (
+                "You are a role-playing AI. Your only job is to portray the character of Elena Petrova based on the following description. "
+                "You must never break character. Do not act as a doctor, therapist, or AI assistant. Only respond as Elena would. "
+                "Here is your character profile: " + f.read()
+            )
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="Persona prompt not found.")
 
@@ -85,13 +89,15 @@ async def evaluate_endpoint(request: EvaluationRequest):
 
     # Build the master prompt
     master_prompt = (
-        "You are an automated evaluation engine. Your sole function is to analyze a conversation transcript based on a provided rubric and return a single, valid JSON object. "
-        "Do not add any introductory text, explanations, apologies, or any characters outside of the final JSON object. Your entire response must be only the JSON. "
-        "The JSON object must have these exact keys: 'empathy_score' (integer), 'investigative_questioning_score' (integer), 'collaborative_problem_solving_score' (integer), 'ai_justifications' (a JSON object with string values).\n\n"
-        f"Here is the rubric:\n{rubric_definition}"
+        "You are an automated evaluation engine. Your sole function is to analyze a conversation transcript and return a single, valid JSON object. Do not include any text outside of the JSON object. "
+        "Evaluate only the lines prefixed with 'Doctor:'.\n\n"
+        f"Here is the rubric:\n{rubric_definition}\n\n"
+        "Based on the rubric, provide your response in a single, valid JSON object with these exact keys. The `ai_justifications` key must contain an object with justifications for each score.\n"
+        "EXAMPLE of a valid response format:\n"
+        '{"empathy_score": 3, "investigative_questioning_score": 5, "collaborative_problem_solving_score": 2, "ai_justifications": {"empathy_score": "The doctor showed some empathy but did not validate the patient\'s core concern.", "investigative_questioning_score": "The doctor used excellent open-ended questions to discover the root cause.", "collaborative_problem_solving_score": "The doctor did not propose a collaborative plan."}}'
     )
 
-    transcript_text = "\n".join(request.transcript)
+    transcript_text = request.transcript
 
     messages = [
         {"role": "system", "content": master_prompt},
