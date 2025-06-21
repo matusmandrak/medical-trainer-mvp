@@ -126,59 +126,47 @@ async function handleEvaluation() {
 }
 
 function displayEvaluationResults(data: Record<string, any>) {
-  // Reset feedback container
-  feedbackContainer.innerHTML = ''
+  // 1. Clear any old results from the container and add a main title.
+  feedbackContainer.innerHTML = '<h2>Evaluation Results</h2>';
 
-  // Heading
-  const heading = document.createElement('h2')
-  heading.textContent = 'Evaluation Results'
-  feedbackContainer.appendChild(heading)
+  // 2. Safely get the justifications object. If it doesn't exist, create an empty one.
+  const justifications = data.ai_justifications || {};
 
-  // If data has nested scores, iterate accordingly
-  Object.entries(data).forEach(([criterion, value]) => {
-    let score: number | string | undefined
-    let justification: string | undefined
+  // 3. Create a clean object of only the scores we want to display.
+  const scoresToShow = {
+    empathy_score: data.empathy_score,
+    investigative_questioning_score: data.investigative_questioning_score,
+    collaborative_problem_solving_score: data.collaborative_problem_solving_score
+  };
 
-    if (value && typeof value === 'object') {
-      if ('score' in value) score = (value as any).score
-      if ('justification' in value) justification = (value as any).justification
-    } else {
-      score = value as any
-    }
+  // 4. Loop through our scores object and build a card for each one.
+  Object.entries(scoresToShow).forEach(([key, score]) => {
+    // Don't create a card if a score is missing for some reason.
+    if (score === undefined || score === null) return;
 
-    // Create feedback card
-    const card = document.createElement('div')
-    card.classList.add('feedback-card')
-    if (score !== undefined && score !== null) {
-      card.classList.add(`score-${score}`)
-    }
+    const card = document.createElement('div');
+    // Add the general card class and the specific score class (e.g., "score-3") for color-coding.
+    card.className = `feedback-card score-${score}`;
 
-    // Criterion heading
-    const critHeading = document.createElement('h4')
-    critHeading.textContent = criterion.replace(/([A-Z])/g, ' $1').trim()
-    card.appendChild(critHeading)
+    // Find the matching justification text for the current score's key.
+    const justificationText = justifications[key] || 'No justification was provided.';
+    
+    // Create a nice, human-readable title from the key (e.g., "empathy_score" becomes "Empathy Score").
+    const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-    // Score display
-    if (score !== undefined) {
-      const scoreDiv = document.createElement('div')
-      scoreDiv.classList.add('score-display')
-      scoreDiv.textContent = typeof score === 'number' ? `${score} / 5` : String(score)
-      card.appendChild(scoreDiv)
-    }
+    // Build the entire HTML for the card in one go. This is efficient.
+    card.innerHTML = `
+      <h4>${title}</h4>
+      <div class="score-display">${score} / 5</div>
+      <p class="justification-text">${justificationText}</p>
+    `;
 
-    // Justification paragraph
-    if (justification) {
-      const p = document.createElement('p')
-      p.classList.add('justification-text')
-      p.textContent = justification
-      card.appendChild(p)
-    }
+    // Add the completed card to our feedback container.
+    feedbackContainer.appendChild(card);
+  });
 
-    feedbackContainer.appendChild(card)
-  })
-
-  // Make container visible
-  feedbackContainer.style.display = 'block'
+  // 5. Finally, make the whole container visible on the page.
+  feedbackContainer.style.display = 'block';
 }
 
 // Attach listener
