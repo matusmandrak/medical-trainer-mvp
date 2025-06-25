@@ -9,17 +9,24 @@ export const feedbackContainer = document.querySelector<HTMLDivElement>('#feedba
 
 // Auth controls
 const loginLink = document.querySelector<HTMLAnchorElement>('#login-link')
+const signupLink = document.querySelector<HTMLAnchorElement>('#signup-link')
 const logoutButton = document.querySelector<HTMLButtonElement>('#logout-button')
 const dashboardLink = document.querySelector<HTMLAnchorElement>('#dashboard-link')
 
 // On load, toggle auth controls based on token
 const token = localStorage.getItem('access_token')
 if (token) {
+  // User is logged in: show logout & dashboard, hide login and signup links
   logoutButton?.style.setProperty('display', 'inline-block')
-  loginLink?.style.setProperty('display', 'none')
   dashboardLink?.style.setProperty('display', 'inline-block')
+
+  loginLink?.style.setProperty('display', 'none')
+  signupLink?.style.setProperty('display', 'none')
 } else {
+  // User is logged out: show login & signup links, hide logout & dashboard
   loginLink?.style.setProperty('display', 'inline-block')
+  signupLink?.style.setProperty('display', 'inline-block')
+
   logoutButton?.style.setProperty('display', 'none')
   dashboardLink?.style.setProperty('display', 'none')
 }
