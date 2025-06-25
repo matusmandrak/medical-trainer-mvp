@@ -7,6 +7,29 @@ export const messageInput = document.querySelector<HTMLInputElement>('#message-i
 export const evaluateButton = document.querySelector<HTMLButtonElement>('#evaluate-button')!
 export const feedbackContainer = document.querySelector<HTMLDivElement>('#feedback-container')!
 
+// Auth controls
+const loginLink = document.querySelector<HTMLAnchorElement>('#login-link')
+const logoutButton = document.querySelector<HTMLButtonElement>('#logout-button')
+const dashboardLink = document.querySelector<HTMLAnchorElement>('#dashboard-link')
+
+// On load, toggle auth controls based on token
+const token = localStorage.getItem('access_token')
+if (token) {
+  logoutButton?.style.setProperty('display', 'inline-block')
+  loginLink?.style.setProperty('display', 'none')
+  dashboardLink?.style.setProperty('display', 'inline-block')
+} else {
+  loginLink?.style.setProperty('display', 'inline-block')
+  logoutButton?.style.setProperty('display', 'none')
+  dashboardLink?.style.setProperty('display', 'none')
+}
+
+// Logout handler
+logoutButton?.addEventListener('click', () => {
+  localStorage.removeItem('access_token')
+  window.location.reload()
+})
+
 // Conversation history
 export const conversationHistory: string[] = []
 
@@ -87,6 +110,8 @@ messageForm.addEventListener('submit', async (event) => {
 // ---------------------- Evaluation Flow ----------------------
 
 async function handleEvaluation() {
+  const token = localStorage.getItem('access_token')
+  
   if (conversationHistory.length === 0) {
     addMessageToChatWindow('assistant', 'Please have a conversation before requesting feedback.')
     return
@@ -102,11 +127,17 @@ async function handleEvaluation() {
       .map((msg, idx) => `${idx % 2 === 0 ? 'Doctor' : 'Patient'}: ${msg}`)
       .join('\n')
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/evaluate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ transcript }),
     })
 

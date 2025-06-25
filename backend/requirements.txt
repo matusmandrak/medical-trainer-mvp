@@ -3,4 +3,5 @@ uvicorn[standard]
 python-dotenv
 SQLAlchemy
 psycopg2-binary
-openai 
+openai
+supabase 

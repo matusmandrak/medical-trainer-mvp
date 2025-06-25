@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from pydantic import BaseModel
@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 from database import SessionLocal
 from models import Evaluation
+from supabase_client import supabase
 
 app = FastAPI()
 
@@ -31,6 +32,12 @@ class ChatMessage(BaseModel):
 
 class EvaluationRequest(BaseModel):
     transcript: str
+
+
+# Shared credentials schema for auth endpoints
+class AuthRequest(BaseModel):
+    email: str
+    password: str
 
 
 @app.get("/")
@@ -68,8 +75,8 @@ async def chat_endpoint(chat: ChatMessage):
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=messages,
-        )
+            messages=messages,  # type: ignore[arg-type]
+        )  # type: ignore[arg-type]
         ai_response = completion.choices[0].message.content
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
@@ -78,8 +85,44 @@ async def chat_endpoint(chat: ChatMessage):
 
 
 @app.post("/api/evaluate")
-async def evaluate_endpoint(request: EvaluationRequest):
-    """Evaluate a transcript using the AI and save results to the database."""
+async def evaluate_endpoint(
+    request: EvaluationRequest,
+    authorization: str = Header(..., description="Bearer access token"),
+):
+    """Evaluate a transcript using the AI and save results to the database.
+
+    Requires a valid Supabase JWT access token in the `Authorization` header.
+    """
+
+    # ---------------------------
+    # Validate JWT with Supabase
+    # ---------------------------
+
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing.")
+
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header must be in the format 'Bearer <token>'.")
+
+    jwt_token = authorization.split(" ", 1)[1]
+
+    try:
+        auth_res = supabase.auth.get_user(jwt_token)
+
+        err = getattr(auth_res, "error", None)
+        if err is not None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_obj = getattr(auth_res, "user", None)
+        if user_obj is None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_id = getattr(user_obj, "id", None)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Token validation failed: {str(e)}")
+
     # Load rubric definition
     try:
         with open(os.path.join(os.path.dirname(__file__), "project_brief.txt"), "r", encoding="utf-8") as f:
@@ -112,9 +155,9 @@ async def evaluate_endpoint(request: EvaluationRequest):
     try:
         completion = client.chat.completions.create(
             model="gpt-4o",
-            messages=messages,
-        )
-        ai_content = completion.choices[0].message.content
+            messages=messages,  # type: ignore[arg-type]
+        )  # type: ignore[arg-type]
+        ai_content: str = completion.choices[0].message.content or ""
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
 
@@ -129,7 +172,7 @@ async def evaluate_endpoint(request: EvaluationRequest):
     try:
         evaluation_record = Evaluation(
             created_at=datetime.utcnow(),
-            user_id=None,
+            user_id=user_id,
             scenario_id=None,
             full_transcript=transcript_text,
             empathy_score=evaluation_data.get("empathy_score"),
@@ -145,4 +188,135 @@ async def evaluate_endpoint(request: EvaluationRequest):
     finally:
         session.close()
 
-    return evaluation_data 
+    return evaluation_data
+
+
+# ---------------------------
+# Authentication Endpoints
+# ---------------------------
+
+
+@app.post("/api/auth/signup")
+async def signup_endpoint(credentials: AuthRequest):
+    """Register a new user with Supabase."""
+    try:
+        # Supabase expects a dict payload for sign-up
+        result = supabase.auth.sign_up({
+            "email": credentials.email,
+            "password": credentials.password,
+        })
+
+        # The Supabase Python client returns an AuthResponse-like object
+        err = getattr(result, "error", None)
+        if err is not None:
+            msg = getattr(err, "message", str(err))
+            raise HTTPException(status_code=400, detail=msg)
+
+        user_obj = getattr(result, "user", None)
+        if user_obj is None:
+            raise HTTPException(status_code=400, detail="Signup failed: No user information returned.")
+
+        # Convert user object to a serializable dict if possible
+        user_dict = user_obj.__dict__ if hasattr(user_obj, "__dict__") else user_obj
+
+        return {"user": user_dict}
+
+    except HTTPException:
+        # Already handled
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Supabase signup error: {str(e)}")
+
+
+@app.post("/api/auth/login")
+async def login_endpoint(credentials: AuthRequest):
+    """Authenticate a user with Supabase and return session data (access token)."""
+    try:
+        result = supabase.auth.sign_in_with_password({
+            "email": credentials.email,
+            "password": credentials.password,
+        })
+
+        # Handle Supabase errors
+        err = getattr(result, "error", None)
+        if err is not None:
+            msg = getattr(err, "message", str(err))
+            raise HTTPException(status_code=400, detail=msg)
+
+        session_obj = getattr(result, "session", None)
+        if session_obj is None:
+            raise HTTPException(status_code=400, detail="Login failed: No session returned.")
+
+        session_dict = session_obj.__dict__ if hasattr(session_obj, "__dict__") else session_obj
+
+        return {"session": session_dict}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Supabase login error: {str(e)}")
+
+
+# ---------------------------
+# User History Endpoint
+# ---------------------------
+
+
+@app.get("/api/me/history")
+async def history_endpoint(authorization: str = Header(..., description="Bearer access token")):
+    """Return the authenticated user's evaluation history (oldest to newest)."""
+
+    # Validate token (same logic as /api/evaluate)
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing.")
+
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header must be in the format 'Bearer <token>'.")
+
+    jwt_token = authorization.split(" ", 1)[1]
+
+    try:
+        auth_res = supabase.auth.get_user(jwt_token)
+
+        err = getattr(auth_res, "error", None)
+        if err is not None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_obj = getattr(auth_res, "user", None)
+        if user_obj is None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_id = getattr(user_obj, "id", None)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Token validation failed: {str(e)}")
+
+    # Query evaluations for the user
+    session = SessionLocal()
+    try:
+        evaluations = (
+            session.query(Evaluation)
+            .filter(Evaluation.user_id == user_id)
+            .order_by(Evaluation.created_at.asc())
+            .all()
+        )
+
+        history = []
+        for ev in evaluations:
+            history.append(
+                {
+                    "id": ev.id,
+                    "created_at": ev.created_at.isoformat() if ev.created_at is not None else None,
+                    "scenario_id": ev.scenario_id,
+                    "full_transcript": ev.full_transcript,
+                    "empathy_score": ev.empathy_score,
+                    "investigative_questioning_score": ev.investigative_questioning_score,
+                    "collaborative_problem_solving_score": ev.collaborative_problem_solving_score,
+                    "ai_justifications": ev.ai_justifications,
+                }
+            )
+
+        return history
+    finally:
+        session.close() 

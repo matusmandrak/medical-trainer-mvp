@@ -256,3 +256,9 @@ button:disabled {
     font-size: 1.5rem;
   }
 }
+
+/* Chart container ensures canvas fills grid cell */
+.chart-container {
+  position: relative;
+  width: 100%;
+}
