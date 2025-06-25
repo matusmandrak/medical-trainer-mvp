@@ -6,7 +6,7 @@ const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 // Verify auth token
 const token = localStorage.getItem('access_token')
 if (!token) {
-  window.location.href = '/login.html'
+  window.location.href = '/login'
   throw new Error('No auth token, redirecting to login')
 }
 

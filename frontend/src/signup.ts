@@ -32,7 +32,7 @@ signupForm?.addEventListener('submit', async (e) => {
     // const data = await response.json()
 
     alert('Success! Please check your email for a confirmation link.')
-    window.location.href = '/login.html'
+    window.location.href = '/login'
   } catch (err) {
     console.error('Signup error:', err)
     alert('Sign up failed. Please try again.')
