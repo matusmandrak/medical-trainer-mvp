@@ -3,29 +3,71 @@ import Chart from 'chart.js/auto'
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 
-// Verify auth token
+// --------------------------------------------------
+// Auth check
+// --------------------------------------------------
 const token = localStorage.getItem('access_token')
 if (!token) {
   window.location.href = '/login'
   throw new Error('No auth token, redirecting to login')
 }
 
-// Canvas elements
-const empathyCanvas = document.getElementById('empathy-chart') as HTMLCanvasElement | null
-const questioningCanvas = document.getElementById('questioning-chart') as HTMLCanvasElement | null
-const problemCanvas = document.getElementById('problem-solving-chart') as HTMLCanvasElement | null
-
-if (!empathyCanvas || !questioningCanvas || !problemCanvas) {
-  console.error('Dashboard canvas elements not found.')
+// --------------------------------------------------
+// Canvas references
+// --------------------------------------------------
+const canvasElems: Record<string, HTMLCanvasElement | null> = {
+  empathy: document.getElementById('empathy-chart') as HTMLCanvasElement | null,
+  informationGathering: document.getElementById('information-gathering-chart') as HTMLCanvasElement | null,
+  clarity: document.getElementById('clarity-chart') as HTMLCanvasElement | null,
+  collaboration: document.getElementById('collaboration-chart') as HTMLCanvasElement | null,
+  difficultConversations: document.getElementById('difficult-conversations-chart') as HTMLCanvasElement | null,
 }
 
-interface EvaluationRecord {
+// --------------------------------------------------
+// Types based on new API
+// --------------------------------------------------
+interface ScoreEntry {
+  skill_name: string
+  score: number
+}
+
+interface EvaluationSession {
   created_at: string
-  empathy_score: number
-  investigative_questioning_score: number
-  collaborative_problem_solving_score: number
+  scores: ScoreEntry[]
 }
 
+// Mapping from API skill names to our local keys and display info
+const SKILL_META: Record<string, { key: keyof typeof canvasElems; color: string; label: string }> = {
+  'Empathy & Rapport Building': {
+    key: 'empathy',
+    color: '#2563eb',
+    label: 'Empathy & Rapport Building',
+  },
+  'Information Gathering': {
+    key: 'informationGathering',
+    color: '#9333ea',
+    label: 'Information Gathering',
+  },
+  'Patient Education & Clarity': {
+    key: 'clarity',
+    color: '#f59e0b',
+    label: 'Patient Education & Clarity',
+  },
+  'Collaborative & Non-Judgmental Practice': {
+    key: 'collaboration',
+    color: '#10b981',
+    label: 'Collaborative & Non-Judgmental Practice',
+  },
+  'Managing Difficult Conversations': {
+    key: 'difficultConversations',
+    color: '#ef4444',
+    label: 'Managing Difficult Conversations',
+  },
+}
+
+// --------------------------------------------------
+// Helpers
+// --------------------------------------------------
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
   return new Intl.DateTimeFormat('en-US', {
@@ -37,9 +79,9 @@ function formatDate(dateStr: string): string {
 function createLineChart(
   ctx: HTMLCanvasElement,
   labels: string[],
-  dataPoints: number[],
+  dataPoints: (number | null)[],
   title: string,
-  color: string
+  color: string,
 ) {
   new Chart(ctx, {
     type: 'line',
@@ -49,30 +91,23 @@ function createLineChart(
         {
           label: title,
           data: dataPoints,
-          fill: false,
           borderColor: color,
           backgroundColor: color,
+          fill: false,
           tension: 0.3,
+          spanGaps: true,
         },
       ],
     },
     options: {
       responsive: true,
       plugins: {
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
         title: {
           display: true,
           text: title,
-          padding: {
-            top: 10,
-            bottom: 20,
-          },
-          font: {
-            size: 16,
-            weight: 'bold',
-          },
+          padding: { top: 10, bottom: 20 },
+          font: { size: 16, weight: 'bold' },
         },
       },
       scales: {
@@ -80,54 +115,67 @@ function createLineChart(
           beginAtZero: true,
           min: 0,
           max: 5,
-          ticks: {
-            stepSize: 1,
-          },
+          ticks: { stepSize: 1 },
         },
       },
     },
   })
 }
 
+// --------------------------------------------------
+// Main loader
+// --------------------------------------------------
 async function loadHistory() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/me/history`, {
+    const res = await fetch(`${API_BASE_URL}/api/me/history`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`)
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
-    const history: EvaluationRecord[] = await response.json()
-
-    if (!history.length) {
+    const sessions: EvaluationSession[] = await res.json()
+    if (sessions.length === 0) {
       alert('No evaluation history yet.')
       return
     }
 
-    // Sort by created_at ascending
-    history.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    // Sort sessions oldest -> newest
+    sessions.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-    const labels = history.map(rec => formatDate(rec.created_at))
+    const labels: string[] = []
+    // Initialise data arrays for each skill
+    const skillSeries: Record<keyof typeof canvasElems, (number | null)[]> = {
+      empathy: [],
+      informationGathering: [],
+      clarity: [],
+      collaboration: [],
+      difficultConversations: [],
+    }
 
-    const empathyData = history.map(rec => rec.empathy_score)
-    const questioningData = history.map(rec => rec.investigative_questioning_score)
-    const problemData = history.map(rec => rec.collaborative_problem_solving_score)
+    sessions.forEach((session) => {
+      labels.push(formatDate(session.created_at))
 
-    if (empathyCanvas) {
-      createLineChart(empathyCanvas, labels, empathyData, 'Empathy Score', '#2563eb')
-    }
-    if (questioningCanvas) {
-      createLineChart(questioningCanvas, labels, questioningData, 'Investigative Questioning Score', '#10b981')
-    }
-    if (problemCanvas) {
-      createLineChart(problemCanvas, labels, problemData, 'Collaborative Problem Solving Score', '#f59e0b')
-    }
+      // Build a map for quick lookup for this session
+      const scoreMap = new Map(session.scores.map((s) => [s.skill_name, s.score]))
+
+      // For each skill, push score or null
+      Object.values(SKILL_META).forEach(({ key, label }) => {
+        const score = scoreMap.has(label) ? scoreMap.get(label)! : null
+        skillSeries[key].push(score)
+      })
+    })
+
+    // Create charts for each skill
+    Object.values(SKILL_META).forEach(({ key, label, color }) => {
+      const ctx = canvasElems[key]
+      if (ctx) {
+        createLineChart(ctx, labels, skillSeries[key], label, color)
+      }
+    })
   } catch (err) {
-    console.error('Failed to load history:', err)
+    console.error('Failed to load dashboard data:', err)
     alert('Failed to load dashboard data.')
   }
 }

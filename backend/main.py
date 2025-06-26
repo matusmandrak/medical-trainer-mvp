@@ -11,7 +11,7 @@ import asyncio
 from datetime import datetime
 import json
 from database import SessionLocal
-from models import Evaluation
+from models import Scenario, ScenarioSkill, Evaluation, EvaluationScore
 from supabase_client import supabase
 
 app = FastAPI()
@@ -26,11 +26,13 @@ app.add_middleware(
 
 
 class ChatMessage(BaseModel):
+    scenario_id: str
     history: List[str]
     message: str
 
 
 class EvaluationRequest(BaseModel):
+    scenario_id: str
     transcript: str
 
 
@@ -45,19 +47,70 @@ async def read_root():
     return {"status": "ok"}
 
 
+@app.get("/api/scenarios")
+async def list_scenarios():
+    """Return a list of all scenarios with basic metadata."""
+    session = SessionLocal()
+    try:
+        scenarios = session.query(Scenario).all()
+        return [
+            {
+                "id": s.id,
+                "title": s.title,
+                "learning_path": s.learning_path,
+                "difficulty": s.difficulty,
+            }
+            for s in scenarios
+        ]
+    finally:
+        session.close()
+
+
+@app.get("/api/scenarios/{scenario_id}")
+async def get_scenario(scenario_id: str):
+    """Return detailed information for a single scenario, including required skills."""
+    session = SessionLocal()
+    try:
+        scenario = session.query(Scenario).filter(Scenario.id == scenario_id).first()
+        if scenario is None:
+            raise HTTPException(status_code=404, detail="Scenario not found.")
+
+        skills = [skill.skill_name for skill in scenario.skills]
+
+        return {
+            "id": scenario.id,
+            "title": scenario.title,
+            "learning_path": scenario.learning_path,
+            "difficulty": scenario.difficulty,
+            "goal": scenario.goal,
+            "persona_prompt": scenario.persona_prompt,
+            "opening_line": scenario.opening_line,
+            "skills": skills,
+        }
+    finally:
+        session.close()
+
+
 @app.post("/api/chat")
 async def chat_endpoint(chat: ChatMessage):
     """Generate a chat response using the OpenAI GPT model."""
-    # Load persona prompt
+    # Fetch scenario persona prompt from DB
+    session = SessionLocal()
     try:
-        with open(os.path.join(os.path.dirname(__file__), "project_brief.txt"), "r", encoding="utf-8") as f:
-            persona_prompt = (
-                "You are a role-playing AI. Your only job is to portray the character of Elena Petrova based on the following description. "
-                "You must never break character. Do not act as a doctor, therapist, or AI assistant. Only respond as Elena would. "
-                "Here is your character profile: " + f.read()
-            )
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Persona prompt not found.")
+        scenario = session.query(Scenario).filter(Scenario.id == chat.scenario_id).first()
+        if scenario is None:
+            raise HTTPException(status_code=404, detail="Scenario not found.")
+
+        persona_prompt = (
+            "You are an advanced role-playing AI acting as a patient in a medical training simulation. Your performance must be realistic and dynamic. Follow these rules strictly:\n"
+            "1. **Embody the Character:** You must strictly adhere to the character's core personality, background, and emotional state as described in the profile below.\n"
+            "2. **Listen and React:** This is an interactive conversation. You must listen carefully to what the 'Doctor' says and have your character react in a logical and human-like way. If the Doctor is empathetic and makes concessions, your character should become calmer or more cooperative. If the Doctor is dismissive or rude, your character might become more upset or withdrawn. Your responses must not be repetitive; they must evolve based on the Doctor's input.\n"
+            "3. **Maintain the Goal:** The character has an underlying goal or fear. You should guide the conversation from the character's perspective, but you must be open to being persuaded or having your concerns addressed by a skilled Doctor.\n"
+            "4. **Stay in Character:** NEVER break character. Do not provide assistance, identify as an AI, or act as a therapist. Respond only and always as the character would.\n\n"
+            "Here is the character you must play:\n" + scenario.persona_prompt
+        )
+    finally:
+        session.close()
 
     client = OpenAI()  # Uses OPENAI_API_KEY from environment variables
 
@@ -123,22 +176,50 @@ async def evaluate_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Token validation failed: {str(e)}")
 
-    # Load rubric definition
-    try:
-        with open(os.path.join(os.path.dirname(__file__), "project_brief.txt"), "r", encoding="utf-8") as f:
-            rubric_definition = f.read()
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Rubric definition not found.")
+    # ---------------------------
+    # Fetch scenario and its required skills
+    # ---------------------------
 
-    # Build the ultra-strict master prompt
+    db_session = SessionLocal()
+    try:
+        scenario = db_session.query(Scenario).filter(Scenario.id == request.scenario_id).first()
+        if scenario is None:
+            raise HTTPException(status_code=404, detail="Scenario not found.")
+
+        required_skills = [skill.skill_name for skill in scenario.skills]
+    finally:
+        db_session.close()
+
+    if not required_skills:
+        raise HTTPException(status_code=400, detail="Scenario has no skills configured.")
+
+    # ---------------------------
+    # Build dynamic rubric from MASTER_RUBRIC
+    # ---------------------------
+
+    from rubric import MASTER_RUBRIC  # local import to avoid circular issues
+
+    rubric_sections: list[str] = []
+    for skill_name in required_skills:
+        skill_rubric = MASTER_RUBRIC.get(skill_name)
+        if skill_rubric is None:
+            continue  # skip unknown
+        rubric_sections.append(f"{skill_name}:")
+        for level, description in skill_rubric.items():
+            rubric_sections.append(f"  Level {level}: {description}")
+
+    rubric_text = "\n".join(rubric_sections)
+
+    # Build evaluator prompt
     master_prompt = (
         "You are an automated evaluation engine. Your entire response must be a single, valid JSON object and nothing else. "
-        "First, think step-by-step through the transcript and for each criterion in the rubric, write down your reasoning for the score. "
-        "After your internal analysis, you must format your final output as a single JSON object with the exact keys: 'empathy_score' (integer), 'investigative_questioning_score' (integer), 'collaborative_problem_solving_score' (integer), and 'ai_justifications'.\n\n"
-        "The 'ai_justifications' value MUST be another JSON object containing a key for each score criterion with your detailed written justification as its string value. Do not omit any part of this structure.\n\n"
-        f"Here is the rubric:\n{rubric_definition}\n\n"
-        "EXAMPLE of a valid response format:\n"
-        '{"empathy_score": 1, "investigative_questioning_score": 2, "collaborative_problem_solving_score": 1, "ai_justifications": {"empathy_score": "The doctor was dismissive and did not acknowledge the patient\'s concerns.", "investigative_questioning_score": "The questions were mostly closed-ended and did not explore the patient\'s perspective.", "collaborative_problem_solving_score": "The doctor issued a command rather than suggesting a collaborative plan."}}\n\n'
+        "First, think step-by-step through the transcript and for each listed skill, write down your reasoning for the score. "
+        "Your task is to score the performance of the 'Doctor' only. Do not score the 'Patient'. "
+        "Your scoring and justification must be based exclusively on the lines beginning with 'Doctor:'. Any other lines should be ignored for scoring purposes. "
+        "After your internal analysis, format your final output as a JSON object where each key is the skill name and its value is another JSON object with the exact keys 'score' (integer 1-5) and 'justification' (string).\n\n"
+        f"Here is the rubric you must use:\n{rubric_text}\n\n"
+        "EXAMPLE of a valid response format for two skills:\n"
+        '{"Empathy & Rapport Building": {"score": 4, "justification": "Example justification."}, "Information Gathering": {"score": 3, "justification": "Example justification."}}\n\n'
         "Now, analyze the following transcript and provide your complete JSON response:\n"
     )
 
@@ -161,32 +242,61 @@ async def evaluate_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
 
-    # Parse AI JSON response
-    try:
-        evaluation_data = json.loads(ai_content)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="AI response was not valid JSON.")
+    # ---------------------------
+    # Robust JSON parsing helper
+    # ---------------------------
+    # The AI sometimes returns extra text before/after the JSON. We attempt to
+    # isolate the first JSON object by trimming to the substring between the
+    # first '{' and the last '}' characters.
 
-    # Persist to DB
-    session = SessionLocal()
+    cleaned_content = ai_content
+    first_brace = ai_content.find("{")
+    last_brace = ai_content.rfind("}")
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        cleaned_content = ai_content[first_brace : last_brace + 1]
+
+    try:
+        evaluation_data = json.loads(cleaned_content)
+    except json.JSONDecodeError:
+        # Fallback: attempt to parse the raw content if cleaning failed
+        try:
+            evaluation_data = json.loads(ai_content)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail="AI response was not valid JSON.")
+
+    # Persist to DB (evaluation record + individual scores)
+    db_session = SessionLocal()
     try:
         evaluation_record = Evaluation(
             created_at=datetime.utcnow(),
             user_id=user_id,
-            scenario_id=None,
+            scenario_id=request.scenario_id,
             full_transcript=transcript_text,
-            empathy_score=evaluation_data.get("empathy_score"),
-            investigative_questioning_score=evaluation_data.get("investigative_questioning_score"),
-            collaborative_problem_solving_score=evaluation_data.get("collaborative_problem_solving_score"),
-            ai_justifications=evaluation_data.get("ai_justifications"),
         )
-        session.add(evaluation_record)
-        session.commit()
+        db_session.add(evaluation_record)
+        db_session.commit()
+        db_session.refresh(evaluation_record)
+
+        # Expecting evaluation_data to be a dict keyed by skill name
+        for skill_name, score_obj in evaluation_data.items():
+            if not isinstance(score_obj, dict):
+                continue
+            score_val = score_obj.get("score")
+            justification_val = score_obj.get("justification")
+            evaluation_score = EvaluationScore(
+                evaluation_id=evaluation_record.id,
+                skill_name=skill_name,
+                score=score_val,
+                justification=justification_val,
+            )
+            db_session.add(evaluation_score)
+
+        db_session.commit()
     except Exception as db_err:
-        session.rollback()
+        db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     finally:
-        session.close()
+        db_session.close()
 
     return evaluation_data
 
@@ -310,10 +420,14 @@ async def history_endpoint(authorization: str = Header(..., description="Bearer 
                     "created_at": ev.created_at.isoformat() if ev.created_at is not None else None,
                     "scenario_id": ev.scenario_id,
                     "full_transcript": ev.full_transcript,
-                    "empathy_score": ev.empathy_score,
-                    "investigative_questioning_score": ev.investigative_questioning_score,
-                    "collaborative_problem_solving_score": ev.collaborative_problem_solving_score,
-                    "ai_justifications": ev.ai_justifications,
+                    "scores": [
+                        {
+                            "skill_name": s.skill_name,
+                            "score": s.score,
+                            "justification": s.justification,
+                        }
+                        for s in ev.scores
+                    ],
                 }
             )
 

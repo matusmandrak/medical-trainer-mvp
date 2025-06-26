@@ -1,5 +1,45 @@
 import '../style.css'
 
+// ---------------------- Scenario Handling ----------------------
+
+// Parse scenario ID from URL
+const urlParams = new URLSearchParams(window.location.search)
+const scenarioId = urlParams.get('scenario')
+
+if (!scenarioId) {
+  window.location.href = '/scenarios.html'
+  throw new Error('No scenario specified; redirecting to scenarios list')
+}
+
+// Fetch scenario details and populate sidebar
+async function loadScenarioDetails() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/scenarios/${encodeURIComponent(scenarioId!)}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const scenario = await res.json() as Record<string, any>
+
+    const descContainer = document.querySelector<HTMLDivElement>('.scenario-description')
+    if (descContainer) {
+      descContainer.innerHTML = `
+        <h3>${scenario.title ?? 'Scenario'}</h3>
+        <p><strong>Goal:</strong> ${scenario.goal ?? 'No goal defined.'}</p>
+        <p><strong>Learning Path:</strong> ${scenario.learning_path ?? 'N/A'}</p>
+        <p><strong>Difficulty:</strong> ${scenario.difficulty ?? 'N/A'}</p>
+      `
+    }
+
+    // Display the patient's opening line and seed conversation history
+    const openingLine: string | undefined = scenario.opening_line
+    if (openingLine) {
+      addMessageToChatWindow('assistant', openingLine)
+      conversationHistory.push({ role: 'assistant', content: openingLine })
+    }
+  } catch (err) {
+    console.error('Failed to load scenario details:', err)
+  }
+}
+
 // Grab HTML elements
 export const chatWindow = document.querySelector<HTMLDivElement>('#chat-window')!
 export const messageForm = document.querySelector<HTMLFormElement>('#message-form')!
@@ -38,7 +78,7 @@ logoutButton?.addEventListener('click', () => {
 })
 
 // Conversation history
-export const conversationHistory: string[] = []
+export const conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
 
 /**
  * Append a user or assistant message to the chat window and keep the latest
@@ -65,54 +105,52 @@ if (import.meta.env.DEV) {
 
 // Handle message form submission
 messageForm.addEventListener('submit', async (event) => {
-  event.preventDefault()
+  event.preventDefault();
 
-  const userText = messageInput.value.trim()
-  if (!userText) return // Ignore empty submissions
+  const userText = messageInput.value.trim();
+  if (!userText) return; // Ignore empty submissions
 
-  // Immediately display user message
-  addMessageToChatWindow('user', userText)
-
-  // We add the user's message to the history *before* sending
-  const currentHistory = [...conversationHistory, userText]
-
-  // Clear input for a responsive feel
-  messageInput.value = ''
+  // 1. Display user message immediately for a responsive feel
+  addMessageToChatWindow('user', userText);
+  messageInput.value = ''; // Clear the input right away
 
   try {
+    // 2. Prepare the data for the API. Note that we send the history as it was *before* this new message.
+    const historyForAPI = conversationHistory.map(item => item.content);
+
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      // --- FIX #1: Send the correct JSON structure ---
       body: JSON.stringify({
-        history: conversationHistory, // The history *before* the user's latest message
-        message: userText           // The new message itself
+        scenario_id: scenarioId,
+        history: historyForAPI, // Send the old history
+        message: userText,      // Send the new message separately
       }),
-    })
+    });
 
     if (!response.ok) {
-        // If the server response is not OK, we throw an error to be caught by the catch block
-        throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json()
-    // --- FIX #2: Look for the correct 'response' key ---
-    const assistantText = data.response ?? ''
+    const data = await response.json();
+    const assistantText = data.response ?? '';
 
     if (assistantText) {
-      addMessageToChatWindow('assistant', assistantText)
-      // Now we update the history with both messages for the next turn
-      conversationHistory.push(userText, assistantText)
+      // 3. Display the AI's response
+      addMessageToChatWindow('assistant', assistantText);
+      
+      // 4. NOW, after a successful round-trip, add BOTH messages to the history
+      conversationHistory.push({ role: 'user', content: userText });
+      conversationHistory.push({ role: 'assistant', content: assistantText });
     }
   } catch (error) {
-    console.error('Error fetching assistant response:', error)
-    addMessageToChatWindow('assistant', 'Sorry, something went wrong. Please try again later.')
-    // Note: We don't add the user's message to history if the API call fails
-    // to prevent a broken conversation history. The user can just try sending again.
+    console.error('Error fetching assistant response:', error);
+    addMessageToChatWindow('assistant', 'Sorry, something went wrong. Please try again later.');
+    // We correctly do NOT add the user's message to history if the API call fails.
   }
-})
+});
 
 // ---------------------- Evaluation Flow ----------------------
 
@@ -131,7 +169,7 @@ async function handleEvaluation() {
   try {
     // Build transcript string with speaker prefixes
     const transcript = conversationHistory
-      .map((msg, idx) => `${idx % 2 === 0 ? 'Doctor' : 'Patient'}: ${msg}`)
+      .map(({ role, content }) => `${role === 'user' ? 'Doctor' : 'Patient'}: ${content}`)
       .join('\n')
 
     const headers: Record<string, string> = {
@@ -145,7 +183,7 @@ async function handleEvaluation() {
     const response = await fetch(`${API_BASE_URL}/api/evaluate`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ transcript }),
+      body: JSON.stringify({ transcript: transcript, scenario_id: scenarioId }),
     })
 
     if (!response.ok) {
@@ -167,46 +205,37 @@ function displayEvaluationResults(data: Record<string, any>) {
   // 1. Clear any old results from the container and add a main title.
   feedbackContainer.innerHTML = '<h2>Evaluation Results</h2>';
 
-  // 2. Safely get the justifications object. If it doesn't exist, create an empty one.
-  const justifications = data.ai_justifications || {};
+  // 2. Loop through the data object directly. The key will be the skill name.
+  Object.entries(data).forEach(([skillName, details]) => {
+    
+    // 3. Check if the 'details' object is valid and has what we need.
+    if (typeof details !== 'object' || !('score' in details) || !('justification' in details)) {
+      return; // Skip this entry if the format is wrong
+    }
+    
+    const score = details.score;
+    const justificationText = details.justification;
 
-  // 3. Create a clean object of only the scores we want to display.
-  const scoresToShow = {
-    empathy_score: data.empathy_score,
-    investigative_questioning_score: data.investigative_questioning_score,
-    collaborative_problem_solving_score: data.collaborative_problem_solving_score
-  };
-
-  // 4. Loop through our scores object and build a card for each one.
-  Object.entries(scoresToShow).forEach(([key, score]) => {
-    // Don't create a card if a score is missing for some reason.
-    if (score === undefined || score === null) return;
-
+    // 4. Create the card and add the correct classes.
     const card = document.createElement('div');
-    // Add the general card class and the specific score class (e.g., "score-3") for color-coding.
     card.className = `feedback-card score-${score}`;
 
-    // Find the matching justification text for the current score's key.
-    const justificationText = justifications[key] || 'No justification was provided.';
-    
-    // Create a nice, human-readable title from the key (e.g., "empathy_score" becomes "Empathy Score").
-    const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-    // Build the entire HTML for the card in one go. This is efficient.
+    // 5. Build the card's HTML in one go with the correct data.
     card.innerHTML = `
-      <h4>${title}</h4>
+      <h4>${skillName}</h4>
       <div class="score-display">${score} / 5</div>
       <p class="justification-text">${justificationText}</p>
     `;
-
-    // Add the completed card to our feedback container.
+    
+    // 6. Add the completed card to the page.
     feedbackContainer.appendChild(card);
   });
 
-  // 5. Finally, make the whole container visible on the page.
+  // 7. Finally, make the whole container visible.
   feedbackContainer.style.display = 'block';
 }
 
 // Attach listener
 evaluateButton.addEventListener('click', handleEvaluation)
 
+loadScenarioDetails()
