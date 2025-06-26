@@ -7,7 +7,7 @@ const urlParams = new URLSearchParams(window.location.search)
 const scenarioId = urlParams.get('scenario')
 
 if (!scenarioId) {
-  window.location.href = '/scenarios.html'
+  window.location.href = '/scenarios'
   throw new Error('No scenario specified; redirecting to scenarios list')
 }
 

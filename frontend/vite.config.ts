@@ -5,7 +5,6 @@
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   build: {
     rollupOptions: {
@@ -14,7 +13,8 @@ export default defineConfig({
         login: resolve(__dirname, 'login.html'),
         signup: resolve(__dirname, 'signup.html'),
         dashboard: resolve(__dirname, 'dashboard.html'),
+        scenarios: resolve(__dirname, 'scenarios.html'), // Make sure this new page is included
       },
     },
   },
-}) 
+})
