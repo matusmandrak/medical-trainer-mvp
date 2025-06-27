@@ -58,40 +58,4 @@ const listContainer = document.getElementById('scenario-list') as HTMLElement | 
 
 // Function to load and display the scenarios
 function loadScenarios() {
-  if (!listContainer) {
-    console.error('#scenario-list element not found')
-    return
-  }
-
-  if (!scenariosData.length) {
-    listContainer.innerHTML = 'No scenarios available at the moment.'
-    return
-  }
-
-  // Clear any existing content
-  listContainer.innerHTML = ''
-
-  // Loop through our static data and create a card for each scenario
-  scenariosData.forEach((scenario) => {
-    const cardLink = document.createElement('a')
-    cardLink.href = `/trainer?scenario=${scenario.id}`
-    cardLink.className = 'scenario-card'
-    cardLink.innerHTML = `
-      <div class="scenario-card__image">
-        <span>${scenario.learning_path}</span>
-      </div>
-      <div class="scenario-card__content">
-        <h3 class="scenario-card__title">${scenario.title}</h3>
-        <p class="scenario-card__description">${scenario.description}</p>
-        <div class="scenario-card__meta">
-          <span class="meta-tag">Difficulty: ${scenario.difficulty}</span>
-        </div>
-      </div>
-    `
-
-    listContainer.appendChild(cardLink)
-  })
-}
-
-// Load scenarios on page load
-loadScenarios()
+  if 
