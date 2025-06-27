@@ -33,6 +33,9 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
 }
 
 /* Main container */
@@ -220,6 +223,7 @@ button:disabled {
   grid-template-columns: 300px 1fr;
   width: 100%;
   min-height: 100vh;
+  position: relative;
 }
 
 .app-sidebar {
@@ -809,6 +813,7 @@ body.home {
   left: 0;
   z-index: 100;
   box-shadow: 0 2px 8px hsla(0, 0%, 0%, 0.05);
+  grid-row: 1 / 2;
 }
 
 .nav {
@@ -1100,8 +1105,7 @@ body.home {
 
 .sidebar-content {
   padding: 1.5rem;
-  flex-grow: 1;
-  overflow-y: auto;
+  min-height: 0;
 }
 
 .app-sidebar .scenario-description {
@@ -1138,13 +1142,6 @@ body.home {
   font-weight: 500;
 }
 
-.sidebar-footer {
-  padding: 1.5rem;
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
 
 /* ========= TRAINER PAGE - CHAT INTERFACE STYLES ========= */
 
@@ -1211,20 +1208,27 @@ body.home {
 /* ========= ENHANCED TRAINER PAGE LAYOUT ========= */
 /* Make the main layout fill the remaining screen height */
 .app-layout {
-  height: calc(100vh - var(--header-height));
+  position: relative;
+  display: grid;
+  grid-template-columns: 300px 1fr;
   transition: grid-template-columns 0.4s ease;
+  grid-row: 2 / 3;
+  overflow: hidden;
   }
   
   .app-sidebar {
   transition: margin-left 0.4s ease;
   position: relative; /* For positioning the toggle button */
+  overflow: hidden;
+  overflow-y: auto;
   }
   
   .sidebar-toggle {
   position: absolute;
-  top: 1.5rem;
-  right: -15px;
-  z-index: 10;
+  top: 2.5rem;
+  left: 300px;
+  transform: translateX(-50%);
+  z-index: 110;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -1235,7 +1239,7 @@ body.home {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s ease, background-color 0.3s ease;
+  transition: left 0.4s ease, transform 0.4s ease;
   }
   
   .sidebar-toggle:hover {
@@ -1255,7 +1259,8 @@ body.home {
   }
 
   .sidebar-collapsed .sidebar-toggle {
-    transform: rotate(180deg); /* Flips the arrow */
+    left: 25px;
+    transform: translateX(-50%) rotate(180deg);
   }
   
   /* New Patient Header */

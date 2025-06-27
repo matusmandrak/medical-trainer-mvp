@@ -22,15 +22,13 @@
     </header>
 
     <div class="app-layout">
+      <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle Sidebar">&larr;</button>
       <aside class="app-sidebar">
         <header></header>
         <div class="scenario-description"></div>
         <div class="skills-to-practice"></div>
 
-        <div class="sidebar-footer">
-          <a id="dashboard-link" href="/dashboard" class="button button--secondary" style="display: none;">My Progress</a>
-          <button id="logout-button" class="button button--secondary" style="display: none;">Logout</button>
-        </div>
+  
       </aside>
 
       <main class="app-main-content">
@@ -50,7 +48,6 @@
         <div id="feedback-container" style="display: none;"></div>
       </main>
     </div>
-    <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle Sidebar">&larr;</button>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html> 
