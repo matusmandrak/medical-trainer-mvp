@@ -5,6 +5,7 @@
   --user-msg-bg: #eef2ff;  /* blue-50 */
   --assistant-msg-bg: #f3f4f6; /* gray-100 */
   --border-radius: 12px;
+  --accent-red: #dc2626; /* blood-red accent */
 }
 
 * {
@@ -260,5 +261,137 @@ button:disabled {
 /* Chart container ensures canvas fills grid cell */
 .chart-container {
   position: relative;
+  width: 100%;
+}
+
+/* ---------------- Homepage Styles ---------------- */
+
+/* Primary call-to-action button on homepage */
+#try-it-out-button {
+  background: var(--accent-red);
+  padding: 0.9rem 1.8rem;
+  font-size: 1.05rem;
+  border-radius: var(--border-radius);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+#try-it-out-button:hover {
+  background: #b91c1c; /* slightly darker red */
+  transform: translateY(-2px);
+}
+
+/* General section spacing for landing page */
+body > section {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+body > section + section {
+  margin-top: 2.5rem;
+}
+
+/* Typography refinements */
+section h1,
+section h2 {
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 0.015em;
+}
+
+section p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+/* ---------- Enhanced Homepage Layout ---------- */
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+.logo span {
+  color: #111827;
+}
+.site-nav {
+  display: flex;
+  gap: 1.5rem;
+}
+.nav-link {
+  color: #111827;
+  text-decoration: none;
+  font-weight: 500;
+}
+.nav-link:hover {
+  color: var(--accent-color);
+}
+
+.section {
+  padding: 4rem 2rem;
+}
+.narrow {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.accent-bg {
+  background: #f9fafb;
+}
+.hero {
+  background: var(--primary-bg);
+  text-align: center;
+}
+.hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+.subheading {
+  font-size: 1.15rem;
+  color: #374151;
+  max-width: 600px;
+  margin: 0 auto 2rem auto;
+}
+.cta-btn {
+  background: var(--accent-red);
+  padding: 0.9rem 2rem;
+  font-size: 1.05rem;
+  border-radius: var(--border-radius);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.cta-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+/* Homepage specific overrides */
+body.home {
+  display: block;
+  padding: 0;
+  background: var(--primary-bg);
+  color: #111827;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+body.home .site-header {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+body.home .section {
   width: 100%;
 }

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Communication Trainer</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <aside class="app-sidebar">
+        <header>
+          <h1>AI Communication Trainer</h1>
+        </header>
+        <div class="scenario-description"></div>
+
+        <!-- Authentication controls -->
+        <div class="auth-controls" style="margin-top: 2rem; display: flex; gap: 0.75rem;">
+          <a id="login-link" href="/login">Login</a>
+          <a id="signup-link" href="/signup">Sign Up</a>
+          <button id="logout-button" style="display: none;">Logout</button>
+          <a id="dashboard-link" href="/dashboard" style="display: none;">View My Progress</a>
+        </div>
+      </aside>
+
+      <main class="app-main-content">
+        <div class="main-container">
+          <div id="chat-window"></div>
+
+          <form id="message-form">
+            <input type="text" id="message-input" placeholder="Type your message..." required />
+            <button type="submit">Send</button>
+          </form>
+
+          <button id="evaluate-button">Finish &amp; Get Feedback</button>
+
+          <div id="feedback-container" style="display: none;"></div>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html> 

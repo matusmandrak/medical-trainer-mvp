@@ -31,7 +31,7 @@ loginForm?.addEventListener('submit', async (e) => {
     const data: { session?: { access_token?: string } } = await response.json()
     if (data.session && data.session.access_token) {
       localStorage.setItem('access_token', data.session.access_token)
-      window.location.href = '/'
+      window.location.href = '/scenarios'
     } else {
       alert('Login failed: invalid credentials')
     }

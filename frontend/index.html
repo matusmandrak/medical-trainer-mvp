@@ -2,43 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Communication Trainer</title>
+    <title>Medical Communication Trainer</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="stylesheet" href="/style.css" />
   </head>
-  <body>
-    <div class="app-layout">
-      <aside class="app-sidebar">
-        <header>
-          <h1>AI Communication Trainer</h1>
-        </header>
-        <div class="scenario-description"></div>
+  <body class="home">
+    <!-- Header -->
+    <header class="site-header">
+      <div class="logo">MedComm <span>Trainer</span></div>
+      <nav class="site-nav">
+        <a class="nav-link" href="/login">Login</a>
+        <a class="nav-link" href="/signup">Sign Up</a>
+        <a class="nav-link" href="/scenarios">Scenarios</a>
+      </nav>
+    </header>
 
-        <!-- Authentication controls -->
-        <div class="auth-controls" style="margin-top: 2rem; display: flex; gap: 0.75rem;">
-          <a id="login-link" href="/login">Login</a>
-          <a id="signup-link" href="/signup">Sign Up</a>
-          <button id="logout-button" style="display: none;">Logout</button>
-          <a id="dashboard-link" href="/dashboard" style="display: none;">View My Progress</a>
-        </div>
-      </aside>
+    <!-- Hero Section -->
+    <section class="hero section">
+      <h1>Master the Art of Medical Communication</h1>
+      <p class="subheading">Interactive AI-powered simulations that help healthcare professionals practice empathy, clarity, and collaborative problem-solving.</p>
+      <button id="try-it-out-button" class="cta-btn">Try It Out Now</button>
+    </section>
 
-      <main class="app-main-content">
-        <div class="main-container">
-          <div id="chat-window"></div>
+    <!-- Problem Section -->
+    <section class="section narrow">
+      <h2>The Problem</h2>
+      <p>Effective communication is one of the most challenging skills for medical professionals to master. Time constraints, complex information, and heightened patient emotions can lead to misunderstandings, reduced adherence, and poorer health outcomes.</p>
+    </section>
 
-          <form id="message-form">
-            <input type="text" id="message-input" placeholder="Type your message..." required />
-            <button type="submit">Send</button>
-          </form>
-
-          <button id="evaluate-button">Finish &amp; Get Feedback</button>
-
-          <div id="feedback-container" style="display: none;"></div>
-        </div>
-      </main>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
+    <!-- Vision & Mission Section -->
+    <section class="section accent-bg">
+      <div class="narrow">
+        <h2>Our Vision &amp; Mission</h2>
+        <p>Our vision is a healthcare system where every patient feels heard, understood, and empowered. Our mission is to provide realistic, AI-driven training experiences that enable clinicians to practice and refine their communication skills in a safe environment, fostering empathy, clarity, and collaborative care.</p>
+      </div>
+    </section>
+    <script type="module" src="/src/homepage.ts"></script>
   </body>
 </html> 

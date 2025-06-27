@@ -40,6 +40,7 @@ class EvaluationRequest(BaseModel):
 class AuthRequest(BaseModel):
     email: str
     password: str
+    username: str
 
 
 @app.get("/")
@@ -314,6 +315,11 @@ async def signup_endpoint(credentials: AuthRequest):
         result = supabase.auth.sign_up({
             "email": credentials.email,
             "password": credentials.password,
+            "options": {
+                "data": {
+                    "display_name": credentials.username,
+                }
+            },
         })
 
         # The Supabase Python client returns an AuthResponse-like object

@@ -27,7 +27,7 @@ async function loadScenarios() {
 
     scenarios.forEach((scenario) => {
       const link = document.createElement('a')
-      link.href = `/?scenario=${encodeURIComponent(String(scenario.id))}`
+      link.href = `/trainer?scenario=${encodeURIComponent(String(scenario.id))}`
       link.classList.add('scenario-card')
       link.style.textDecoration = 'none'
       link.style.color = 'inherit'

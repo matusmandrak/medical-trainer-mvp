@@ -12,8 +12,9 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         login: resolve(__dirname, 'login.html'),
         signup: resolve(__dirname, 'signup.html'),
+        trainer: resolve(__dirname, 'trainer.html'),
         dashboard: resolve(__dirname, 'dashboard.html'),
-        scenarios: resolve(__dirname, 'scenarios.html'), // Make sure this new page is included
+        scenarios: resolve(__dirname, 'scenarios.html'),
       },
     },
   },
