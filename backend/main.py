@@ -43,6 +43,17 @@ class AuthRequest(BaseModel):
     username: str
 
 
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    username: str           # required only when signing up
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str           # no username here
+
+
 @app.get("/")
 async def read_root():
     return {"status": "ok"}
@@ -308,7 +319,7 @@ async def evaluate_endpoint(
 
 
 @app.post("/api/auth/signup")
-async def signup_endpoint(credentials: AuthRequest):
+async def signup_endpoint(credentials: SignupRequest):
     """Register a new user with Supabase."""
     try:
         # Supabase expects a dict payload for sign-up
@@ -345,7 +356,7 @@ async def signup_endpoint(credentials: AuthRequest):
 
 
 @app.post("/api/auth/login")
-async def login_endpoint(credentials: AuthRequest):
+async def login_endpoint(credentials: LoginRequest):
     """Authenticate a user with Supabase and return session data (access token)."""
     try:
         result = supabase.auth.sign_in_with_password({
