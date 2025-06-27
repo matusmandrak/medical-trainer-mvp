@@ -1,72 +1,97 @@
 import '../style.css'
 
+// Define the structure of a scenario object
 interface Scenario {
-  id: number | string
+  id: string
   title: string
   learning_path: string
-  difficulty: string
+  difficulty: 'Medium' | 'Hard'
+  description: string
 }
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
-const listContainer = document.getElementById('scenario-list') as HTMLDivElement | null
+// A static list of five scenarios with descriptions
+const scenariosData: Scenario[] = [
+  {
+    id: 'S001',
+    title: 'The Asymptomatic Hypertensive',
+    learning_path: 'Managing Medication Adherence',
+    difficulty: 'Medium',
+    description:
+      'Confront a pleasant but firm patient who feels perfectly healthy despite their clinical data showing hypertension. Your goal is to uncover their reasons for non-adherence and collaboratively agree on a treatment plan.',
+  },
+  {
+    id: 'S002',
+    title: 'The Overcrowded Pediatric Ward',
+    learning_path: 'Conflict Management & Setting Boundaries',
+    difficulty: 'Hard',
+    description:
+      'Navigate a high-emotion conflict with the terrified parents of a sick child. Your goal is to de-escalate their anger and gain cooperation when hospital policy prevents you from giving them what they want.',
+  },
+  {
+    id: 'S003',
+    title: 'The Antibiotic Skeptic',
+    learning_path: 'Managing Misinformation',
+    difficulty: 'Hard',
+    description:
+      'Build trust with an intelligent patient who is deeply skeptical of Western medicine. Can you navigate their beliefs about natural remedies to negotiate treatment for a serious bacterial infection?',
+  },
+  {
+    id: 'S004',
+    title: 'The Hidden Agenda',
+    learning_path: 'Information Gathering',
+    difficulty: 'Medium',
+    description:
+      "Your patient reveals a potentially serious symptom just as you have your hand on the doorknob. Can you manage the patient's embarrassment and skillfully re-engage to gather critical information?",
+  },
+  {
+    id: 'S005',
+    title: 'The Self-Diagnosed Patient',
+    learning_path: 'Managing Patient Expectations',
+    difficulty: 'Medium',
+    description:
+      'Face a data-driven patient who has already diagnosed themselves using an AI and now just wants a prescription. Can you validate their effort while explaining the vital need for a physical examination?',
+  },
+]
 
-if (!listContainer) {
-  console.error('#scenario-list element not found')
-}
+// Find the container element on the page
+const listContainer = document.getElementById('scenario-list') as HTMLElement | null
 
-async function loadScenarios() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/scenarios`)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const scenarios: Scenario[] = await response.json()
-
-    if (!scenarios.length) {
-      listContainer!.innerHTML = '<p>No scenarios available at the moment.</p>'
-      return
-    }
-
-    scenarios.forEach((scenario) => {
-      const link = document.createElement('a')
-      link.href = `/trainer?scenario=${encodeURIComponent(String(scenario.id))}`
-      link.classList.add('scenario-card')
-      link.style.textDecoration = 'none'
-      link.style.color = 'inherit'
-
-      const card = document.createElement('div')
-      card.style.border = '1px solid #e5e7eb'
-      card.style.borderRadius = 'var(--border-radius)'
-      card.style.padding = '1.25rem'
-      card.style.background = '#ffffff'
-      card.style.boxShadow = '0 3px 8px rgba(0,0,0,0.04)'
-      card.style.height = '100%'
-
-      const title = document.createElement('h3')
-      title.textContent = scenario.title
-      title.style.fontSize = '1.1rem'
-      title.style.fontWeight = '600'
-      title.style.marginBottom = '0.5rem'
-
-      const learningPath = document.createElement('p')
-      learningPath.textContent = `Learning Path: ${scenario.learning_path}`
-      learningPath.style.fontSize = '0.9rem'
-      learningPath.style.color = '#374151'
-      learningPath.style.marginBottom = '0.25rem'
-
-      const difficulty = document.createElement('p')
-      difficulty.textContent = `Difficulty: ${scenario.difficulty}`
-      difficulty.style.fontSize = '0.9rem'
-      difficulty.style.color = '#6b7280'
-
-      card.appendChild(title)
-      card.appendChild(learningPath)
-      card.appendChild(difficulty)
-      link.appendChild(card)
-      listContainer?.appendChild(link)
-    })
-  } catch (err) {
-    console.error('Failed to load scenarios:', err)
-    listContainer!.innerHTML = '<p>Failed to load scenarios.</p>'
+// Function to load and display the scenarios
+function loadScenarios() {
+  if (!listContainer) {
+    console.error('#scenario-list element not found')
+    return
   }
+
+  if (!scenariosData.length) {
+    listContainer.innerHTML = 'No scenarios available at the moment.'
+    return
+  }
+
+  // Clear any existing content
+  listContainer.innerHTML = ''
+
+  // Loop through our static data and create a card for each scenario
+  scenariosData.forEach((scenario) => {
+    const cardLink = document.createElement('a')
+    cardLink.href = `/trainer?scenario=${scenario.id}`
+    cardLink.className = 'scenario-card'
+    cardLink.innerHTML = `
+      <div class="scenario-card__image">
+        <span>${scenario.learning_path}</span>
+      </div>
+      <div class="scenario-card__content">
+        <h3 class="scenario-card__title">${scenario.title}</h3>
+        <p class="scenario-card__description">${scenario.description}</p>
+        <div class="scenario-card__meta">
+          <span class="meta-tag">Difficulty: ${scenario.difficulty}</span>
+        </div>
+      </div>
+    `
+
+    listContainer.appendChild(cardLink)
+  })
 }
 
+// Load scenarios on page load
 loadScenarios()

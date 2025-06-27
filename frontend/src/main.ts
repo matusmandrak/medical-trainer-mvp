@@ -3,6 +3,12 @@ import '../style.css'
 if (document.querySelector<HTMLDivElement>('#chat-window')) {
   // ---------------------- Trainer Page Logic ----------------------
   (function initTrainer() {
+    const body = document.body;
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+
+    sidebarToggle?.addEventListener('click', () => {
+      body.classList.toggle('sidebar-collapsed');
+    });
     // ---------------------- Scenario Handling ----------------------
     // Parse scenario ID from URL
     const urlParams = new URLSearchParams(window.location.search)
@@ -31,8 +37,29 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
             <p><strong>Goal:</strong> ${scenario.goal ?? 'No goal defined.'}</p>
             <p><strong>Learning Path:</strong> ${scenario.learning_path ?? 'N/A'}</p>
             <p><strong>Difficulty:</strong> ${scenario.difficulty ?? 'N/A'}</p>
-          `
+          `;
+
+          // --- THIS IS THE NEW CODE YOU ADD ---
+          const patientNameHeader = document.getElementById('patient-name-header');
+          if (patientNameHeader && scenario.persona_name) {
+            patientNameHeader.textContent = `Conversation with ${scenario.persona_name}`;
+          }
+          // --- END OF NEW CODE ---
         }
+
+        
+      
+        // --- New block to display skills ---
+        const skillsContainer = document.querySelector<HTMLDivElement>('.skills-to-practice')
+        const rubric = scenario.rubric as Record<string, string> | undefined
+
+        if (skillsContainer && rubric) {
+          const skillsList = Object.keys(rubric)
+            .map((skill) => `<li>${skill}</li>`)
+            .join('')
+          skillsContainer.innerHTML = `<h4>Skills to Practice:</h4><ul>${skillsList}</ul>`
+        }
+        // --- End of new block ---
 
         // Display the patient's opening line and seed conversation history
         const openingLine: string | undefined = scenario.opening_line
@@ -165,8 +192,13 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         const card = document.createElement('div')
         card.className = `feedback-card score-${details.score}`
         card.innerHTML = `
-          <h4>${skill}</h4>
-          <div class="score-display">${details.score} / 5</div>
+          <div class="feedback-card__header">
+            <h4>${skill}</h4>
+            <span class="score-display">${details.score} / 5</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar__fill" style="width: ${details.score * 20}%"></div>
+          </div>
           <p class="justification-text">${details.justification}</p>
         `
         feedbackContainer.appendChild(card)

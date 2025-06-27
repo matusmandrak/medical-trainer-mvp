@@ -8,37 +8,49 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
+    <header class="header">
+      <nav class="nav container">
+        <a href="/dashboard" class="nav__logo">MedComm<span>Trainer</span></a>
+        <div class="nav__menu">
+          <ul class="nav__list">
+            <li class="nav__item"><a href="/dashboard" class="nav__link">Dashboard</a></li>
+            <li class="nav__item"><a href="/scenarios" class="nav__link">Scenarios</a></li>
+            <li class="nav__item"><a href="/logout" class="nav__link">Logout</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
     <div class="app-layout">
       <aside class="app-sidebar">
-        <header>
-          <h1>AI Communication Trainer</h1>
-        </header>
+        <header></header>
         <div class="scenario-description"></div>
+        <div class="skills-to-practice"></div>
 
-        <!-- Authentication controls -->
-        <div class="auth-controls" style="margin-top: 2rem; display: flex; gap: 0.75rem;">
-          <a id="login-link" href="/login">Login</a>
-          <a id="signup-link" href="/signup">Sign Up</a>
-          <button id="logout-button" style="display: none;">Logout</button>
-          <a id="dashboard-link" href="/dashboard" style="display: none;">View My Progress</a>
+        <div class="sidebar-footer">
+          <a id="dashboard-link" href="/dashboard" class="button button--secondary" style="display: none;">My Progress</a>
+          <button id="logout-button" class="button button--secondary" style="display: none;">Logout</button>
         </div>
       </aside>
 
       <main class="app-main-content">
-        <div class="main-container">
-          <div id="chat-window"></div>
-
-          <form id="message-form">
-            <input type="text" id="message-input" placeholder="Type your message..." required />
-            <button type="submit">Send</button>
-          </form>
-
-          <button id="evaluate-button">Finish &amp; Get Feedback</button>
-
-          <div id="feedback-container" style="display: none;"></div>
+        <div class="patient-header">
+          <h2 id="patient-name-header">Conversation with...</h2>
         </div>
+
+        <div id="chat-window"></div>
+
+        <form id="message-form">
+          <input type="text" id="message-input" placeholder="Type your message..." required />
+          <button type="submit">Send</button>
+        </form>
+
+        <button id="evaluate-button">Finish &amp; Get Feedback</button>
+
+        <div id="feedback-container" style="display: none;"></div>
       </main>
     </div>
+    <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle Sidebar">&larr;</button>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html> 

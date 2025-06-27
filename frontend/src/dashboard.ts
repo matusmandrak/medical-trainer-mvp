@@ -21,6 +21,7 @@ const canvasElems: Record<string, HTMLCanvasElement | null> = {
   clarity: document.getElementById('clarity-chart') as HTMLCanvasElement | null,
   collaboration: document.getElementById('collaboration-chart') as HTMLCanvasElement | null,
   difficultConversations: document.getElementById('difficult-conversations-chart') as HTMLCanvasElement | null,
+  radar: document.getElementById('skill-radar-chart') as HTMLCanvasElement | null,
 }
 
 // --------------------------------------------------
@@ -37,33 +38,38 @@ interface EvaluationSession {
 }
 
 // Mapping from API skill names to our local keys and display info
-const SKILL_META: Record<string, { key: keyof typeof canvasElems; color: string; label: string }> = {
+const SKILL_META: Record<string, { key: keyof typeof canvasElems; color: string; label: string; shortLabel: string; }> = {
   'Empathy & Rapport Building': {
     key: 'empathy',
     color: '#2563eb',
     label: 'Empathy & Rapport Building',
+    shortLabel: 'Empathy',
   },
   'Information Gathering': {
     key: 'informationGathering',
     color: '#9333ea',
     label: 'Information Gathering',
+    shortLabel: 'Info Gathering',
   },
   'Patient Education & Clarity': {
     key: 'clarity',
     color: '#f59e0b',
     label: 'Patient Education & Clarity',
+    shortLabel: 'Clarity',
   },
   'Collaborative & Non-Judgmental Practice': {
     key: 'collaboration',
     color: '#10b981',
     label: 'Collaborative & Non-Judgmental Practice',
+    shortLabel: 'Collaboration',
   },
   'Managing Difficult Conversations': {
     key: 'difficultConversations',
     color: '#ef4444',
     label: 'Managing Difficult Conversations',
+    shortLabel: 'Difficult Convos',
   },
-}
+};
 
 // --------------------------------------------------
 // Helpers
@@ -122,6 +128,47 @@ function createLineChart(
   })
 }
 
+function createRadarChart(
+  ctx: HTMLCanvasElement,
+  labels: string[],
+  dataPoints: number[],
+) {
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Latest Score',
+          data: dataPoints,
+          backgroundColor: 'hsla(197, 89%, 43%, 0.2)',
+          borderColor: 'hsla(197, 89%, 43%, 1)',
+          pointBackgroundColor: 'hsla(197, 89%, 43%, 1)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'hsla(197, 89%, 43%, 1)'
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+          grid: { color: 'rgba(0, 0, 0, 0.1)' },
+          pointLabels: { font: { size: 13, weight: 500 } },
+          suggestedMin: 0,
+          suggestedMax: 5,
+          ticks: { stepSize: 1, backdropColor: 'transparent' },
+        },
+      },
+    },
+  })
+}
+
 // --------------------------------------------------
 // Main loader
 // --------------------------------------------------
@@ -174,6 +221,26 @@ async function loadHistory() {
         createLineChart(ctx, labels, skillSeries[key], label, color)
       }
     })
+
+    // --- New block for Radar Chart ---
+    const latestSession = sessions[sessions.length - 1]
+    if (latestSession) {
+      const radarLabels: string[] = []
+      const radarData: number[] = []
+
+      Object.values(SKILL_META).forEach(({ label }) => {
+        const scoreEntry = latestSession.scores.find((s) => s.skill_name === label)
+        // Using shorter labels for the radar chart for readability
+        radarLabels.push(SKILL_META[label].shortLabel);
+        radarData.push(scoreEntry ? scoreEntry.score : 0)
+      })
+
+      const radarCtx = canvasElems.radar
+      if (radarCtx) {
+        createRadarChart(radarCtx, radarLabels, radarData)
+      }
+    }
+    // --- End of new block ---
   } catch (err) {
     console.error('Failed to load dashboard data:', err)
     alert('Failed to load dashboard data.')

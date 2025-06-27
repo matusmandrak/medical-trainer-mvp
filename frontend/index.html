@@ -8,36 +8,113 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body class="home">
-    <!-- Header -->
-    <header class="site-header">
-      <div class="logo">MedComm <span>Trainer</span></div>
-      <nav class="site-nav">
-        <a class="nav-link" href="/login">Login</a>
-        <a class="nav-link" href="/signup">Sign Up</a>
-        <a class="nav-link" href="/scenarios">Scenarios</a>
+    <header class="header" id="header">
+      <nav class="nav container">
+        <a href="#" class="nav__logo">MedComm<span>Trainer</span></a>
+        <div class="nav__menu">
+          <ul class="nav__list">
+            <li class="nav__item"><a href="/scenarios" class="nav__link">Scenarios</a></li>
+            <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
+            <li class="nav__item"><a href="/signup" class="nav__link button button--ghost">Sign Up</a></li>
+          </ul>
+        </div>
       </nav>
     </header>
-
-    <!-- Hero Section -->
-    <section class="hero section">
-      <h1>Master the Art of Medical Communication</h1>
-      <p class="subheading">Interactive AI-powered simulations that help healthcare professionals practice empathy, clarity, and collaborative problem-solving.</p>
-      <button id="try-it-out-button" class="cta-btn">Try It Out Now</button>
-    </section>
-
-    <!-- Problem Section -->
-    <section class="section narrow">
-      <h2>The Problem</h2>
-      <p>Effective communication is one of the most challenging skills for medical professionals to master. Time constraints, complex information, and heightened patient emotions can lead to misunderstandings, reduced adherence, and poorer health outcomes.</p>
-    </section>
-
-    <!-- Vision & Mission Section -->
-    <section class="section accent-bg">
-      <div class="narrow">
-        <h2>Our Vision &amp; Mission</h2>
-        <p>Our vision is a healthcare system where every patient feels heard, understood, and empowered. Our mission is to provide realistic, AI-driven training experiences that enable clinicians to practice and refine their communication skills in a safe environment, fostering empathy, clarity, and collaborative care.</p>
+    
+    <section class="quote-banner section">
+      <div class="container">
+        <div class="quote-banner__content">
+          <p>"Poor communication can cause death — 80% of serious medical errors are attributed to miscommunication."</p>
+        </div>
       </div>
     </section>
-    <script type="module" src="/src/homepage.ts"></script>
+
+    <section class="cta-divider-section">
+      <div class="container">
+        <a href="/signup" class="button button--primary">Discover the solution</a>
+        <svg class="ekg-divider" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10">
+          <path d="M0 5 H35 L40 8 L45 2 L50 5 L55 3 L60 5 H100" fill="none" stroke-width="0.5"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="story section">
+      <div class="story__container container grid">
+        <div class="story__data">
+          <p>This statistic highlights the pressure on even the most dedicated clinicians. While masters of medicine, the art of communication is often learned on the job where the stakes are highest. There has never been a truly safe place to practice the conversations that change lives. Until now.</p>
+          <p>We present the MedCommTrainer: a flight simulator for healthcare's most critical conversations. We provide a realistic, AI-powered environment where professionals can build the confidence and empathy to turn difficult moments into opportunities for trust and healing. Our mission is to make every communication a safe one, ensuring that statistic becomes a relic of the past.</p>
+          <a href="/signup" class="button story__button">Start Your Training</a>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="vision beliefs section">
+        <div class="vision__beliefs">
+          <h3 class="vision__beliefs-title">Our Core Beliefs</h3>
+          <div class="vision__beliefs-grid">
+            <div class="belief-card">
+              <p>Patient safety starts with human connection.</p>
+            </div>
+            <div class="belief-card">
+              <p>Communication is a clinical skill — and it can be trained.</p>
+            </div>
+            <div class="belief-card">
+              <p>Simulation works best when it's realistic, adaptive, and low-risk.</p>
+            </div>
+            <div class="belief-card">
+              <p>AI can augment empathy, not replace it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="steps section" id="about">
+      <h2 class="section__title">A Better Way to Learn</h2>
+      <p class="section__subtitle">Practice critical conversations in three simple steps.</p>
+      <div class="steps__container container grid">
+        <div class="steps__card">
+          <div class="steps__card-number">01</div>
+          <h3 class="steps__card-title">Choose Your Scenario</h3>
+          <p class="steps__card-description">Select from a wide range of realistic patient encounters, from routine check-ups to delivering difficult news.</p>
+        </div>
+        <div class="steps__card">
+          <div class="steps__card-number">02</div>
+          <h3 class="steps__card-title">Talk with an AI Patient</h3>
+          <p class="steps__card-description">Engage in natural, voice-based conversation. Our AI adapts to your communication style in real-time.</p>
+        </div>
+        <div class="steps__card">
+          <div class="steps__card-number">03</div>
+          <h3 class="steps__card-title">Get Instant Feedback</h3>
+          <p class="steps__card-description">Receive a detailed analysis of your performance, highlighting strengths and areas for improvement.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="logos section">
+      <div class="logos__container container">
+        <h3 class="logos__title">TRUSTED BY LEADING HEALTHCARE INSTITUTIONS</h3>
+        <div class="logos__grid">
+          <span class="logos__item">UNIVERSITY HEALTH</span>
+          <span class="logos__item">INNOVATE MEDICAL</span>
+          <span class="logos__item">CARE FORWARD</span>
+          <span class="logos__item">MED SCHOOL PARTNERS</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta section">
+      <div class="cta__container container">
+        <h2 class="cta__title">Ready to Transform Your Communication?</h2>
+        <p class="cta__subtitle">Start your journey towards more empathetic and effective patient care today.</p>
+        <a href="/login" class="button cta__button">Get Started for Free</a>
+      </div>
+    </section>
+
+    <div class="footer__container container">
+      <p class="footer__copy">&copy; 2025 MedComm Trainer. All rights reserved.</p>
+    </div>
   </body>
 </html> 

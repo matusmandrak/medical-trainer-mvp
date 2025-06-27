@@ -7,12 +7,27 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="stylesheet" href="/style.css" />
   </head>
-  <body>
-    <div class="main-container" style="max-width: 960px; margin: 0 auto;">
-      <h1 style="text-align:center; margin-bottom: 1.5rem;">Select a Scenario</h1>
-      <div id="scenario-list" style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));"></div>
-    </div>
-
+  <body class="auth-page-wrapper">
+    <header class="header">
+      <nav class="nav container">
+        <a href="/index" class="nav__logo">MedComm<span>Trainer</span></a>
+        <div class="nav__menu">
+          <ul class="nav__list">
+            <li class="nav__item"><a href="/dashboard" class="nav__link">Dashboard</a></li>
+            <li class="nav__item"><a href="/logout" class="nav__link">Logout</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <main class="app-main">
+      <div class="container">
+        <div class="page-header">
+          <h1>Select a Scenario</h1>
+          <p class="section__subtitle" style="margin-bottom: 0;">Choose a conversation to practice and refine your skills.</p>
+        </div>
+        <div id="scenario-list" class="scenario-grid"></div>
+      </div>
+    </main>
     <script type="module" src="/src/scenarios.ts"></script>
   </body>
 </html>
