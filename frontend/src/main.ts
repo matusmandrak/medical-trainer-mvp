@@ -181,4 +181,32 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         addMessageToChatWindow('assistant', 'Failed to fetch evaluation.')
       } finally {
         evaluateButton.disabled = false
-        evaluateButton.textContent = orig
+        evaluateButton.textContent = originalText ?? 'Finish & Get Feedback'
+      }
+    }
+
+    function displayEvaluationResults(data: Record<string, any>) {
+      feedbackContainer.innerHTML = '<h2>Evaluation Results</h2>'
+      Object.entries(data).forEach(([skill, details]) => {
+        if (typeof details !== 'object' || !('score' in details) || !('justification' in details)) return
+        const card = document.createElement('div')
+        card.className = `feedback-card score-${details.score}`
+        card.innerHTML = `
+          <div class="feedback-card__header">
+            <h4>${skill}</h4>
+            <span class="score-display">${details.score} / 5</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar__fill" style="width: ${details.score * 20}%"></div>
+          </div>
+          <p class="justification-text">${details.justification}</p>
+        `
+        feedbackContainer.appendChild(card)
+      })
+      feedbackContainer.style.display = 'block'
+    }
+
+    evaluateButton.addEventListener('click', handleEvaluation)
+    loadScenarioDetails()
+  })()
+}

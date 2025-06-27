@@ -38,4 +38,19 @@
           <h2 id="patient-name-header">Conversation with...</h2>
         </div>
 
-        <div id="chat-window">
+        <div id="chat-window"></div>
+
+        <form id="message-form">
+          <input type="text" id="message-input" placeholder="Type your message..." required />
+          <button type="submit">Send</button>
+        </form>
+
+        <button id="evaluate-button">Finish &amp; Get Feedback</button>
+
+        <div id="feedback-container" style="display: none;"></div>
+      </main>
+    </div>
+    <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle Sidebar">&larr;</button>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html> 

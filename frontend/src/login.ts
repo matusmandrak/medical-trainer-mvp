@@ -37,4 +37,6 @@ loginForm?.addEventListener('submit', async (e) => {
     }
   } catch (err) {
     console.error('Login error:', err)
-    alert('Login failed. Please try again.'
+    alert('Login failed. Please try again.')
+  }
+}) 
