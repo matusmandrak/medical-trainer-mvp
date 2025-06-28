@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from pydantic import BaseModel
@@ -13,6 +13,9 @@ import json
 from database import SessionLocal
 from models import Scenario, ScenarioSkill, Evaluation, EvaluationScore
 from supabase_client import supabase
+from deepgram import DeepgramClient, PrerecordedOptions
+from elevenlabs.client import ElevenLabs
+import base64
 
 app = FastAPI()
 
@@ -52,6 +55,10 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str           # no username here
+
+
+class TextToSpeechRequest(BaseModel):
+    text: str
 
 
 @app.get("/")
@@ -146,7 +153,35 @@ async def chat_endpoint(chat: ChatMessage):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
 
-    return {"response": ai_response}
+    # Generate audio using ElevenLabs
+    audio_response_base64 = None
+    try:
+        elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+        if elevenlabs_api_key and ai_response:
+            # Initialize ElevenLabs client with API key
+            client_elevenlabs = ElevenLabs(api_key=elevenlabs_api_key)
+            
+            # Generate audio using Rachel voice (or you can use a different voice ID)
+            audio = client_elevenlabs.text_to_speech.convert(
+                text=ai_response,
+                voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice ID
+                model_id="eleven_multilingual_v2",
+                output_format="mp3_44100_128"
+            )
+            
+            # Convert audio to bytes and encode as base64
+            audio_bytes = b"".join(audio)
+            audio_response_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+            
+    except Exception as e:
+        # Log the error but don't fail the entire request
+        print(f"ElevenLabs TTS error: {str(e)}")
+        # Continue without audio if TTS fails
+
+    return {
+        "text_response": ai_response,
+        "audio_response_base64": audio_response_base64
+    }
 
 
 @app.post("/api/evaluate")
@@ -311,6 +346,82 @@ async def evaluate_endpoint(
         db_session.close()
 
     return evaluation_data
+
+
+@app.post("/api/transcribe")
+async def transcribe_endpoint(audio_file: UploadFile = File(...)):
+    """Transcribe an audio file using Deepgram API."""
+    
+    # Check if DEEPGRAM_API_KEY is available
+    deepgram_api_key = os.getenv("DEEPGRAM_API_KEY")
+    if not deepgram_api_key:
+        raise HTTPException(status_code=500, detail="Deepgram API key not configured")
+    
+    # Validate file type (optional - you can add more specific validation)
+    if not audio_file.content_type or not audio_file.content_type.startswith("audio/"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an audio file.")
+    
+    try:
+        # Initialize Deepgram client
+        deepgram = DeepgramClient(deepgram_api_key)
+        
+        # Read the audio file content
+        audio_data = await audio_file.read()
+        
+        # Configure options for transcription
+        options = PrerecordedOptions(
+            model="nova-2",
+            smart_format=True,
+        )
+        
+        # Send audio to Deepgram for transcription
+        response = deepgram.listen.prerecorded.v("1").transcribe_file(
+            {"buffer": audio_data, "mimetype": audio_file.content_type},
+            options
+        )
+        
+        # Extract transcript from response
+        transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
+        
+        return {"transcript": transcript}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+
+
+@app.post("/api/text-to-speech")
+async def text_to_speech_endpoint(request: TextToSpeechRequest):
+    """Convert text to speech using ElevenLabs API."""
+    
+    # Check if ELEVENLABS_API_KEY is available
+    elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+    if not elevenlabs_api_key:
+        raise HTTPException(status_code=500, detail="ElevenLabs API key not configured")
+    
+    # Validate input text
+    if not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text field cannot be empty")
+    
+    try:
+        # Initialize ElevenLabs client with API key
+        client_elevenlabs = ElevenLabs(api_key=elevenlabs_api_key)
+        
+        # Generate audio using Rachel voice
+        audio = client_elevenlabs.text_to_speech.convert(
+            text=request.text.strip(),
+            voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice ID
+            model_id="eleven_multilingual_v2",
+            output_format="mp3_44100_128"
+        )
+        
+        # Convert audio to bytes and encode as base64
+        audio_bytes = b"".join(audio)
+        audio_response_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+        
+        return {"audio_response_base64": audio_response_base64}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Text-to-speech conversion failed: {str(e)}")
 
 
 # ---------------------------

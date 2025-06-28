@@ -61,12 +61,8 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         }
         // --- End of new block ---
 
-        // Display the patient's opening line and seed conversation history
-        const openingLine: string | undefined = scenario.opening_line
-        if (openingLine) {
-          addMessageToChatWindow('assistant', openingLine)
-          conversationHistory.push({ role: 'assistant', content: openingLine })
-        }
+        // Store the opening line for later use when scenario starts
+        savedOpeningLine = scenario.opening_line
       } catch (err) {
         console.error('Failed to load scenario details:', err)
       }
@@ -76,8 +72,11 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     const chatWindow = document.querySelector<HTMLDivElement>('#chat-window')!
     const messageForm = document.querySelector<HTMLFormElement>('#message-form')!
     const messageInput = document.querySelector<HTMLInputElement>('#message-input')!
+    const micButton = document.querySelector<HTMLButtonElement>('#mic-button')!
     const evaluateButton = document.querySelector<HTMLButtonElement>('#evaluate-button')!
     const feedbackContainer = document.querySelector<HTMLDivElement>('#feedback-container')!
+    const startScenarioButton = document.querySelector<HTMLButtonElement>('#start-scenario-button')!
+    const appMainContent = document.querySelector<HTMLElement>('.app-main-content')!
 
     // Auth controls
     const loginLink = document.querySelector<HTMLAnchorElement>('#login-link')
@@ -107,6 +106,9 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
 
     // Conversation history
     const conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
+    
+    // Store opening line for later use
+    let savedOpeningLine: string | undefined
 
     /**
      * Append a message to chat window
@@ -119,9 +121,123 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
       chatWindow.scrollTop = chatWindow.scrollHeight
     }
 
+    /**
+     * Play audio from base64 encoded data
+     */
+    async function playAudioFromBase64(audioData: string) {
+      try {
+        // Decode base64 to binary data
+        const binaryString = atob(audioData)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        
+        // Create blob and audio element
+        const audioBlob = new Blob([bytes], { type: 'audio/mpeg' })
+        const audioUrl = URL.createObjectURL(audioBlob)
+        const audio = new Audio(audioUrl)
+        
+        // Play the audio
+        await audio.play()
+        
+        // Clean up the object URL after playing
+        audio.addEventListener('ended', () => {
+          URL.revokeObjectURL(audioUrl)
+        })
+      } catch (audioErr) {
+        console.error('Error playing audio:', audioErr)
+      }
+    }
+
     // For now, log to verify setup in dev mode
     if (import.meta.env.DEV) {
       console.log('API_BASE_URL', API_BASE_URL)
+    }
+
+    // Voice recording variables
+    let mediaRecorder: MediaRecorder | null = null
+    let audioChunks: Blob[] = []
+    let isRecording = false
+
+    // ---- Voice Recording Logic ----
+    micButton.addEventListener('click', async () => {
+      if (!isRecording) {
+        // Start recording
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+          mediaRecorder = new MediaRecorder(stream)
+          audioChunks = []
+          
+          // Handle data collection
+          mediaRecorder.addEventListener('dataavailable', (event) => {
+            if (event.data.size > 0) {
+              audioChunks.push(event.data)
+            }
+          })
+          
+          // Handle recording stop
+          mediaRecorder.addEventListener('stop', async () => {
+            // Stop all tracks to release microphone
+            stream.getTracks().forEach(track => track.stop())
+            
+            // Create audio blob from chunks
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
+            
+            // Send to transcription API
+            await transcribeAudio(audioBlob)
+          })
+          
+          // Start recording
+          mediaRecorder.start()
+          isRecording = true
+          micButton.classList.add('is-recording')
+          
+        } catch (err) {
+          console.error('Error accessing microphone:', err)
+          addMessageToChatWindow('assistant', 'Unable to access microphone. Please check your permissions.')
+        }
+      } else {
+        // Stop recording
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop()
+          isRecording = false
+          micButton.classList.remove('is-recording')
+        }
+      }
+    })
+
+    async function transcribeAudio(audioBlob: Blob) {
+      try {
+        // Create FormData and append audio file
+        const formData = new FormData()
+        formData.append('audio_file', audioBlob, 'recording.wav')
+        
+        // Send to transcription endpoint
+        const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        
+        const data = await response.json()
+        const transcript = data.transcript || ''
+        
+        // Set the transcribed text in the message input
+        if (transcript.trim()) {
+          messageInput.value = transcript.trim()
+          messageInput.focus()
+        } else {
+          addMessageToChatWindow('assistant', 'No speech detected. Please try speaking more clearly.')
+        }
+        
+      } catch (err) {
+        console.error('Transcription error:', err)
+        addMessageToChatWindow('assistant', 'Failed to transcribe audio. Please try again.')
+      }
     }
 
     // ---- Message form submission ----
@@ -141,15 +257,59 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         })
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const data = await response.json()
-        const assistantText = data.response ?? ''
+        const assistantText = data.text_response ?? ''
+        const audioData = data.audio_response_base64
+
         if (assistantText) {
           addMessageToChatWindow('assistant', assistantText)
           conversationHistory.push({ role: 'user', content: userText })
           conversationHistory.push({ role: 'assistant', content: assistantText })
         }
+
+        // Play audio if available
+        if (audioData) {
+          await playAudioFromBase64(audioData)
+        }
       } catch (err) {
         console.error('Chat error:', err)
         addMessageToChatWindow('assistant', 'Sorry, something went wrong. Please try again later.')
+      }
+    })
+
+    // ---- Start Scenario Logic ----
+    startScenarioButton.addEventListener('click', async () => {
+      // Hide the start scenario button
+      startScenarioButton.style.display = 'none'
+      
+      // Show the chat interface by adding active class
+      appMainContent.classList.add('active')
+      
+      // Display the opening line if available
+      if (savedOpeningLine) {
+        addMessageToChatWindow('assistant', savedOpeningLine)
+        conversationHistory.push({ role: 'assistant', content: savedOpeningLine })
+        
+        // Generate and play audio for the opening line
+        try {
+          const ttsResponse = await fetch(`${API_BASE_URL}/api/text-to-speech`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: savedOpeningLine })
+          })
+          
+          if (ttsResponse.ok) {
+            const ttsData = await ttsResponse.json()
+            const audioData = ttsData.audio_response_base64
+            
+            if (audioData) {
+              await playAudioFromBase64(audioData)
+            }
+          } else {
+            console.error('Failed to generate opening line audio:', ttsResponse.status)
+          }
+        } catch (ttsErr) {
+          console.error('Error generating opening line audio:', ttsErr)
+        }
       }
     })
 

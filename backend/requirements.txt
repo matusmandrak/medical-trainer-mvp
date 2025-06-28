@@ -4,4 +4,6 @@ python-dotenv
 SQLAlchemy
 psycopg2-binary
 openai
-supabase 
+supabase
+deepgram-sdk
+elevenlabs 
