@@ -1144,15 +1144,16 @@ body.home {
 
 /* ========= MESSAGE COUNTER STYLES ========= */
 #message-counter {
-  margin-top: 2rem;
+  margin: 0 2rem 1rem 2rem;
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--primary-color);
   text-align: center;
-  padding: 1rem;
+  padding: 0.75rem 1.5rem;
   background-color: var(--surface-color);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
+  display: none; /* Hidden by default, shown when chat is active */
 }
 
 /* ========= TRAINER PAGE - CHAT INTERFACE STYLES ========= */
@@ -1228,6 +1229,10 @@ body.home {
 }
 
 .app-main-content.active #evaluate-button {
+  display: block;
+}
+
+.app-main-content.active #message-counter {
   display: block;
 }
 
