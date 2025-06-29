@@ -165,8 +165,9 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
      * Update the message counter UI display
      */
     function updateCounterUI() {
-      if (messageCounter) {
-        messageCounter.textContent = `Messages Remaining: ${messagesRemaining}`
+      const counterElement = document.querySelector<HTMLDivElement>('#message-counter')
+      if (counterElement) {
+        counterElement.textContent = `Messages Remaining: ${messagesRemaining}`
       }
     }
 
