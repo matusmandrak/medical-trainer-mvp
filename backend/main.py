@@ -156,14 +156,19 @@ async def chat_endpoint(chat: ChatMessage):
     # Generate audio using ElevenLabs
     audio_response_base64 = None
     try:
+        # Check if ELEVENLABS_API_KEY is available
         elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
-        if elevenlabs_api_key and ai_response:
+        if not elevenlabs_api_key:
+            print("ElevenLabs API key not configured")
+        elif not ai_response or not ai_response.strip():
+            print("AI response text is empty")
+        else:
             # Initialize ElevenLabs client with API key
-            client_elevenlabs = ElevenLabs(api_key=elevenlabs_api_key)
+            client = ElevenLabs(api_key=elevenlabs_api_key)
             
-            # Generate audio using Rachel voice (or you can use a different voice ID)
-            audio = client_elevenlabs.text_to_speech.convert(
-                text=ai_response,
+            # Generate audio using Rachel voice
+            audio = client.text_to_speech.convert(
+                text=ai_response.strip(),
                 voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice ID
                 model_id="eleven_multilingual_v2",
                 output_format="mp3_44100_128"
@@ -175,7 +180,7 @@ async def chat_endpoint(chat: ChatMessage):
             
     except Exception as e:
         # Log the error but don't fail the entire request
-        print(f"ElevenLabs TTS error: {str(e)}")
+        print(f"Text-to-speech conversion failed: {str(e)}")
         # Continue without audio if TTS fails
 
     return {
