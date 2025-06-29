@@ -423,22 +423,34 @@ async def text_to_speech_endpoint(request: TextToSpeechRequest):
     
     try:
         # Initialize ElevenLabs client with API key
-        client_elevenlabs = ElevenLabs(api_key=elevenlabs_api_key)
+        client = ElevenLabs(api_key=elevenlabs_api_key)
         
         # Generate audio using Rachel voice
-        audio = client_elevenlabs.text_to_speech.convert(
+        audio = client.text_to_speech.convert(
             text=request.text.strip(),
             voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice ID
             model_id="eleven_multilingual_v2",
             output_format="mp3_44100_128"
         )
         
-        # Convert audio to bytes and encode as base64
-        audio_bytes = b"".join(audio)
-        audio_response_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+        # More robust audio processing
+        audio_bytes = b""
+        chunk_count = 0
+        for chunk in audio:
+            if chunk:
+                audio_bytes += chunk
+                chunk_count += 1
         
+        print(f"TTS: Processed {chunk_count} audio chunks, total bytes: {len(audio_bytes)}")
+        
+        if not audio_bytes:
+            raise HTTPException(status_code=500, detail="No audio data received from ElevenLabs")
+        
+        audio_response_base64 = base64.b64encode(audio_bytes).decode('utf-8')
         return {"audio_response_base64": audio_response_base64}
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Text-to-speech conversion failed: {str(e)}")
 
