@@ -37,6 +37,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
             <p><strong>Overview:</strong> ${scenario.goal ?? 'No goal defined.'}</p>
             <p><strong>Learning Path:</strong> ${scenario.learning_path ?? 'N/A'}</p>
             <p><strong>Difficulty:</strong> ${scenario.difficulty ?? 'N/A'}</p>
+            <div id="message-counter"></div>
           `;
 
           // --- THIS IS THE NEW CODE YOU ADD ---
