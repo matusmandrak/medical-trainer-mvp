@@ -1142,6 +1142,18 @@ body.home {
   font-weight: 500;
 }
 
+/* ========= MESSAGE COUNTER STYLES ========= */
+#message-counter {
+  margin-top: 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  text-align: center;
+  padding: 1rem;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
 
 /* ========= TRAINER PAGE - CHAT INTERFACE STYLES ========= */
 

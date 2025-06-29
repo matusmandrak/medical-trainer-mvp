@@ -106,6 +106,7 @@ async def get_scenario(scenario_id: str):
             "persona_prompt": scenario.persona_prompt,
             "opening_line": scenario.opening_line,
             "voice_id": scenario.voice_id,
+            "message_limit": scenario.message_limit,
             "skills": skills,
         }
     finally:

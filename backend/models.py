@@ -20,6 +20,7 @@ class Scenario(Base):
     persona_prompt = Column(Text, nullable=False)
     opening_line = Column(Text, nullable=False)
     voice_id = Column(String)
+    message_limit = Column(Integer, nullable=False, server_default='20')
 
     # Relationships
     skills = relationship(

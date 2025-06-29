@@ -64,6 +64,10 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         // Store the opening line and voice_id for later use when scenario starts
         savedOpeningLine = scenario.opening_line
         savedVoiceId = scenario.voice_id
+        
+        // Set the message limit from scenario data and update counter display
+        messagesRemaining = scenario.message_limit || 20
+        updateCounterUI()
       } catch (err) {
         console.error('Failed to load scenario details:', err)
       }
@@ -78,6 +82,10 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     const feedbackContainer = document.querySelector<HTMLDivElement>('#feedback-container')!
     const startScenarioButton = document.querySelector<HTMLButtonElement>('#start-scenario-button')!
     const appMainContent = document.querySelector<HTMLElement>('.app-main-content')!
+    const messageCounter = document.querySelector<HTMLDivElement>('#message-counter')!
+
+    // Message counter variables
+    let messagesRemaining: number = 20
 
     // Auth controls
     const loginLink = document.querySelector<HTMLAnchorElement>('#login-link')
@@ -149,6 +157,15 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         })
       } catch (audioErr) {
         console.error('Error playing audio:', audioErr)
+      }
+    }
+
+    /**
+     * Update the message counter UI display
+     */
+    function updateCounterUI() {
+      if (messageCounter) {
+        messageCounter.textContent = `Messages Remaining: ${messagesRemaining}`
       }
     }
 
@@ -266,6 +283,17 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
           addMessageToChatWindow('assistant', assistantText)
           conversationHistory.push({ role: 'user', content: userText })
           conversationHistory.push({ role: 'assistant', content: assistantText })
+          
+          // Decrement message counter and update display
+          messagesRemaining -= 1
+          updateCounterUI()
+          
+          // Check if messages are exhausted
+          if (messagesRemaining <= 0) {
+            messageInput.disabled = true
+            messageForm.querySelector('button[type="submit"]')?.setAttribute('disabled', 'true')
+            setTimeout(() => handleEvaluation(), 1000) // Small delay before auto-evaluation
+          }
         }
 
         // Play audio if available
