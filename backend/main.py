@@ -3,7 +3,7 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Header, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from openai import OpenAI  # type: ignore
 import os
@@ -59,6 +59,7 @@ class LoginRequest(BaseModel):
 
 class TextToSpeechRequest(BaseModel):
     text: str
+    voice_id: Optional[str] = None
 
 
 @app.get("/")
@@ -166,10 +167,11 @@ async def chat_endpoint(chat: ChatMessage):
             # Initialize ElevenLabs client with API key
             client = ElevenLabs(api_key=elevenlabs_api_key)
             
-            # Generate audio using Rachel voice
+            # Generate audio using scenario-specific voice
+            voice_id = getattr(scenario, 'voice_id', None) or "JBFqnCBsd6RMkjVDRZzb"
             audio = client.text_to_speech.convert(
                 text=ai_response.strip(),
-                voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice ID
+                voice_id=voice_id,
                 model_id="eleven_multilingual_v2",
                 output_format="mp3_44100_128"
             )
@@ -425,10 +427,10 @@ async def text_to_speech_endpoint(request: TextToSpeechRequest):
         # Initialize ElevenLabs client with API key
         client = ElevenLabs(api_key=elevenlabs_api_key)
         
-        # Generate audio using Rachel voice
+        # Generate audio using specified voice or default to Rachel
         audio = client.text_to_speech.convert(
             text=request.text.strip(),
-            voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice ID
+            voice_id=request.voice_id or "JBFqnCBsd6RMkjVDRZzb",  # Use provided voice_id or default to Rachel
             model_id="eleven_multilingual_v2",
             output_format="mp3_44100_128"
         )

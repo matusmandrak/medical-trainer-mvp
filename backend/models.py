@@ -19,6 +19,7 @@ class Scenario(Base):
     goal = Column(Text, nullable=False)
     persona_prompt = Column(Text, nullable=False)
     opening_line = Column(Text, nullable=False)
+    voice_id = Column(String)
 
     # Relationships
     skills = relationship(

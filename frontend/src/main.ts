@@ -61,8 +61,9 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         }
         // --- End of new block ---
 
-        // Store the opening line for later use when scenario starts
+        // Store the opening line and voice_id for later use when scenario starts
         savedOpeningLine = scenario.opening_line
+        savedVoiceId = scenario.voice_id
       } catch (err) {
         console.error('Failed to load scenario details:', err)
       }
@@ -107,8 +108,9 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     // Conversation history
     const conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
     
-    // Store opening line for later use
+    // Store opening line and voice_id for later use
     let savedOpeningLine: string | undefined
+    let savedVoiceId: string | undefined
 
     /**
      * Append a message to chat window
@@ -294,7 +296,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
           const ttsResponse = await fetch(`${API_BASE_URL}/api/text-to-speech`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: savedOpeningLine })
+            body: JSON.stringify({ text: savedOpeningLine, voice_id: savedVoiceId })
           })
           
           if (ttsResponse.ok) {
