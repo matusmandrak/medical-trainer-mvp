@@ -174,13 +174,27 @@ async def chat_endpoint(chat: ChatMessage):
                 output_format="mp3_44100_128"
             )
             
-            # Convert audio to bytes and encode as base64
-            audio_bytes = b"".join(audio)
-            audio_response_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+            # More robust audio processing
+            audio_bytes = b""
+            chunk_count = 0
+            for chunk in audio:
+                if chunk:
+                    audio_bytes += chunk
+                    chunk_count += 1
+            
+            print(f"Processed {chunk_count} audio chunks, total bytes: {len(audio_bytes)}")
+            
+            if not audio_bytes:
+                print("Warning: No audio data received from ElevenLabs")
+            else:
+                audio_response_base64 = base64.b64encode(audio_bytes).decode('utf-8')
             
     except Exception as e:
         # Log the error but don't fail the entire request
         print(f"Text-to-speech conversion failed: {str(e)}")
+        print(f"API key present: {bool(elevenlabs_api_key)}")
+        if ai_response:
+            print(f"Text length: {len(ai_response.strip())}")
         # Continue without audio if TTS fails
 
     return {
