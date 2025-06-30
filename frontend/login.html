@@ -7,39 +7,94 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="stylesheet" href="/style.css" />
   </head>
-  <body class="auth-page-wrapper">
-    <!-- Site Header -->
-    <header class="header">
-      <nav class="nav container">
-        <a href="/" class="nav__logo">MedCommTrainer</a>
-        <div class="nav__menu">
-          <ul class="nav__list">
-            <li class="nav__item"><a href="/about" class="nav__link">About Us</a></li>
-            <li class="nav__item"><a href="/signup" class="nav__link">Sign Up</a></li>
-          </ul>
+  <body>
+    <div class="auth-page-wrapper">
+      <header class="header" id="header">
+        <nav class="nav container">
+          <a href="/" class="nav__logo">MedCommTrainer</a>
+          
+          <!-- Mobile menu button -->
+          <button class="nav__mobile-btn" id="nav-mobile-btn" aria-label="Toggle navigation">
+            <span class="nav__mobile-line"></span>
+            <span class="nav__mobile-line"></span>
+            <span class="nav__mobile-line"></span>
+          </button>
+          
+          <!-- Desktop menu -->
+          <div class="nav__menu" id="nav-menu">
+            <ul class="nav__list">
+              <li class="nav__item nav__dropdown">
+                <a href="#" class="nav__link nav__dropdown-toggle">
+                  Solutions
+                  <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+                <ul class="nav__dropdown-menu">
+                  <li><a href="/scenarios" class="nav__dropdown-link">Scenarios</a></li>
+                </ul>
+              </li>
+              <li class="nav__item"><a href="/" class="nav__link">Pricing</a></li>
+              <li class="nav__item"><a href="/about" class="nav__link">About Us</a></li>
+              <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
+              <li class="nav__item"><a href="/signup" class="nav__link">Sign Up</a></li>
+              <li class="nav__item"><a href="/" class="nav__link button button--ghost">Request a Demo</a></li>
+            </ul>
+          </div>
+        </nav>
+      </header>
+
+      <!-- Auth Main Content -->
+      <main class="auth-main">
+        <div class="auth-container">
+          <h1 class="auth-container__title">Welcome Back</h1>
+          <form id="login-form" class="form">
+            <div class="form-group">
+              <label for="email" class="form-label">Email Address</label>
+              <input type="email" id="email" class="form-input" required placeholder="you@email.com" />
+            </div>
+            <div class="form-group">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" id="password" class="form-input" required />
+            </div>
+            <button type="submit" class="button button--primary">Log In</button>
+            <p class="auth-link">Need an account? <a href="/signup">Sign up here.</a></p>
+          </form>
         </div>
-      </nav>
-    </header>
+      </main>
+    </div>
 
-    <!-- Auth Main Content -->
-    <main class="auth-main">
-      <div class="auth-container">
-        <h1 class="auth-container__title">Welcome Back</h1>
-        <form id="login-form" class="form">
-          <div class="form-group">
-            <label for="email" class="form-label">Email Address</label>
-            <input type="email" id="email" class="form-input" required placeholder="you@email.com" />
-          </div>
-          <div class="form-group">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" id="password" class="form-input" required />
-          </div>
-          <button type="submit" class="button button--primary">Log In</button>
-          <p class="auth-link">Need an account? <a href="/signup">Sign up here.</a></p>
-        </form>
-      </div>
-    </main>
-
+    <script>
+      // Mobile navigation toggle
+      document.addEventListener('DOMContentLoaded', function() {
+        const mobileBtn = document.getElementById('nav-mobile-btn');
+        const navMenu = document.getElementById('nav-menu');
+        
+        if (mobileBtn && navMenu) {
+          mobileBtn.addEventListener('click', function() {
+            mobileBtn.classList.toggle('active');
+            navMenu.classList.toggle('active');
+          });
+          
+          // Close menu when clicking on a link
+          const navLinks = navMenu.querySelectorAll('.nav__link');
+          navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+              mobileBtn.classList.remove('active');
+              navMenu.classList.remove('active');
+            });
+          });
+          
+          // Close menu when clicking outside
+          document.addEventListener('click', function(event) {
+            if (!mobileBtn.contains(event.target) && !navMenu.contains(event.target)) {
+              mobileBtn.classList.remove('active');
+              navMenu.classList.remove('active');
+            }
+          });
+        }
+      });
+    </script>
     <script type="module" src="/src/login.ts"></script>
   </body>
 </html> 
