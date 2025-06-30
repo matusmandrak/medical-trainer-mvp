@@ -11,7 +11,15 @@
     <header class="header">
       <nav class="nav container">
         <a href="/scenarios" class="nav__logo">MedCommTrainer</a>
-        <div class="nav__menu">
+        
+        <!-- Mobile menu button -->
+        <button class="nav__mobile-btn" id="nav-mobile-btn" aria-label="Toggle navigation">
+          <span class="nav__mobile-line"></span>
+          <span class="nav__mobile-line"></span>
+          <span class="nav__mobile-line"></span>
+        </button>
+        
+        <div class="nav__menu" id="nav-menu">
           <ul class="nav__list">
             <li class="nav__item"><a href="/dashboard" class="nav__link">Dashboard</a></li>
             <li class="nav__item"><a href="/scenarios" class="nav__link">Scenarios</a></li>
@@ -23,27 +31,27 @@
 
     <div class="app-layout">
       <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle Sidebar">&larr;</button>
-      <aside class="app-sidebar">
-        <header></header>
-        <div class="scenario-description"></div>
-        <div class="skills-to-practice"></div>
-
-  
+      
+      <aside class="app-sidebar" id="app-sidebar">
+        <div class="sidebar-content">
+          <div class="scenario-description" id="scenario-description"></div>
+          <div class="skills-to-practice" id="skills-to-practice"></div>
+        </div>
       </aside>
 
-      <main class="app-main-content">
+      <main class="app-main-content" id="app-main-content">
         <button id="start-scenario-button" class="button-primary">Start Scenario</button>
         
-      
-
-        <div id="message-counter"></div>
+        <div class="chat-header" style="display: none;" id="chat-header">
+          <div id="message-counter"></div>
+        </div>
 
         <div id="chat-window"></div>
 
         <form id="message-form">
           <input type="text" id="message-input" placeholder="Type your message..." required />
           <button type="submit">Send</button>
-          <button type="button" id="mic-button">
+          <button type="button" id="mic-button" title="Voice Input">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M19 10V12C19 16.4183 15.4183 20 11 20H13C17.4183 20 21 16.4183 21 12V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -54,10 +62,113 @@
         </form>
 
         <button id="evaluate-button">Finish &amp; Get Feedback</button>
-
-        <div id="feedback-container" style="display: none;"></div>
       </main>
     </div>
+
+    <!-- Evaluation Modal -->
+    <div id="evaluation-modal" class="evaluation-modal">
+      <div class="evaluation-content">
+        <div class="evaluation-header">
+          <h2>📊 Performance Evaluation</h2>
+          <button class="modal-close" id="modal-close" title="Close">&times;</button>
+        </div>
+        <div class="evaluation-body">
+          <div id="feedback-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Mobile navigation functionality
+      document.addEventListener('DOMContentLoaded', function() {
+        const mobileBtn = document.getElementById('nav-mobile-btn');
+        const navMenu = document.getElementById('nav-menu');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const appSidebar = document.getElementById('app-sidebar');
+        const body = document.body;
+        
+        // Mobile navigation toggle
+        if (mobileBtn && navMenu) {
+          mobileBtn.addEventListener('click', function() {
+            mobileBtn.classList.toggle('active');
+            navMenu.classList.toggle('active');
+          });
+          
+          // Close menu when clicking on a link
+          const navLinks = navMenu.querySelectorAll('.nav__link');
+          navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+              mobileBtn.classList.remove('active');
+              navMenu.classList.remove('active');
+            });
+          });
+          
+          // Close menu when clicking outside
+          document.addEventListener('click', function(event) {
+            if (!mobileBtn.contains(event.target) && !navMenu.contains(event.target)) {
+              mobileBtn.classList.remove('active');
+              navMenu.classList.remove('active');
+            }
+          });
+        }
+        
+        // Sidebar toggle functionality
+        if (sidebarToggle && appSidebar) {
+          sidebarToggle.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+              // Mobile: show/hide sidebar as overlay
+              appSidebar.classList.toggle('mobile-open');
+            } else {
+              // Desktop: collapse/expand sidebar
+              body.classList.toggle('sidebar-collapsed');
+            }
+          });
+          
+          // Close sidebar on mobile when clicking outside
+          document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768 && 
+                !appSidebar.contains(event.target) && 
+                !sidebarToggle.contains(event.target) && 
+                appSidebar.classList.contains('mobile-open')) {
+              appSidebar.classList.remove('mobile-open');
+            }
+          });
+        }
+        
+        // Modal functionality
+        const evaluationModal = document.getElementById('evaluation-modal');
+        const modalClose = document.getElementById('modal-close');
+        
+        if (modalClose && evaluationModal) {
+          modalClose.addEventListener('click', function() {
+            evaluationModal.classList.remove('active');
+          });
+          
+          // Close modal when clicking outside
+          evaluationModal.addEventListener('click', function(event) {
+            if (event.target === evaluationModal) {
+              evaluationModal.classList.remove('active');
+            }
+          });
+          
+          // Close modal with Escape key
+          document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && evaluationModal.classList.contains('active')) {
+              evaluationModal.classList.remove('active');
+            }
+          });
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+          if (window.innerWidth > 768) {
+            appSidebar.classList.remove('mobile-open');
+            mobileBtn.classList.remove('active');
+            navMenu.classList.remove('active');
+          }
+        });
+      });
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html> 

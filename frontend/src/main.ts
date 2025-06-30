@@ -3,12 +3,6 @@ import '../style.css'
 if (document.querySelector<HTMLDivElement>('#chat-window')) {
   // ---------------------- Trainer Page Logic ----------------------
   (function initTrainer() {
-    const body = document.body;
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-
-    sidebarToggle?.addEventListener('click', () => {
-      body.classList.toggle('sidebar-collapsed');
-    });
     // ---------------------- Scenario Handling ----------------------
     // Parse scenario ID from URL
     const urlParams = new URLSearchParams(window.location.search)
@@ -377,7 +371,8 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     }
 
     function displayEvaluationResults(data: Record<string, any>) {
-      feedbackContainer.innerHTML = '<h2>Evaluation Results</h2>'
+      // Clear previous results and populate the modal's feedback container
+      feedbackContainer.innerHTML = ''
       Object.entries(data).forEach(([skill, details]) => {
         if (typeof details !== 'object' || !('score' in details) || !('justification' in details)) return
         const card = document.createElement('div')
@@ -394,7 +389,12 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         `
         feedbackContainer.appendChild(card)
       })
-      feedbackContainer.style.display = 'block'
+      
+      // Show the evaluation modal
+      const evaluationModal = document.getElementById('evaluation-modal')
+      if (evaluationModal) {
+        evaluationModal.classList.add('active')
+      }
     }
 
     evaluateButton.addEventListener('click', handleEvaluation)
