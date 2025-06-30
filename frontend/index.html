@@ -11,7 +11,16 @@
     <header class="header" id="header">
       <nav class="nav container">
         <a href="/" class="nav__logo">MedCommTrainer</a>
-        <div class="nav__menu">
+        
+        <!-- Mobile menu button -->
+        <button class="nav__mobile-btn" id="nav-mobile-btn" aria-label="Toggle navigation">
+          <span class="nav__mobile-line"></span>
+          <span class="nav__mobile-line"></span>
+          <span class="nav__mobile-line"></span>
+        </button>
+        
+        <!-- Desktop menu -->
+        <div class="nav__menu" id="nav-menu">
           <ul class="nav__list">
             <li class="nav__item nav__dropdown">
               <a href="#" class="nav__link nav__dropdown-toggle">
@@ -186,5 +195,37 @@
         </div>
       </div>
     </footer>
+    
+    <script>
+      // Mobile navigation toggle
+      document.addEventListener('DOMContentLoaded', function() {
+        const mobileBtn = document.getElementById('nav-mobile-btn');
+        const navMenu = document.getElementById('nav-menu');
+        
+        if (mobileBtn && navMenu) {
+          mobileBtn.addEventListener('click', function() {
+            mobileBtn.classList.toggle('active');
+            navMenu.classList.toggle('active');
+          });
+          
+          // Close menu when clicking on a link
+          const navLinks = navMenu.querySelectorAll('.nav__link');
+          navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+              mobileBtn.classList.remove('active');
+              navMenu.classList.remove('active');
+            });
+          });
+          
+          // Close menu when clicking outside
+          document.addEventListener('click', function(event) {
+            if (!mobileBtn.contains(event.target) && !navMenu.contains(event.target)) {
+              mobileBtn.classList.remove('active');
+              navMenu.classList.remove('active');
+            }
+          });
+        }
+      });
+    </script>
   </body>
 </html> 
