@@ -1562,6 +1562,194 @@ body.home {
 .nav__link {
   color: var(--text-color);
   font-weight: 500;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.nav__link:hover {
+  color: var(--secondary-color);
+}
+
+/* ========= GLOBAL NAVIGATION DROPDOWN ========= */
+.nav__dropdown {
+  position: relative;
+}
+
+.nav__dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.nav__dropdown-icon {
+  transition: transform 0.3s ease;
+}
+
+.nav__dropdown:hover .nav__dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.nav__dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--white-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  padding: 0.5rem 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  list-style: none;
+}
+
+.nav__dropdown:hover .nav__dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nav__dropdown-link {
+  display: block;
+  padding: 0.75rem 1.5rem;
+  color: var(--text-color);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.nav__dropdown-link:hover {
+  background-color: var(--background-color);
+  color: var(--secondary-color);
+}
+
+/* ========= GLOBAL BUTTON STYLES FOR NAV ========= */
+.button {
+  display: inline-block;
+  background-color: var(--cta-color);
+  color: var(--white-color);
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: background-color 0.3s;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--body-font);
+}
+
+.button:hover {
+  background-color: var(--cta-hover-color);
+}
+
+.button--ghost {
+  background-color: transparent;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 0.6rem 1.2rem;
+}
+
+.button--ghost:hover {
+  background-color: var(--primary-color);
+  color: var(--white-color);
+}
+
+/* ========= GLOBAL MOBILE NAVIGATION ========= */
+.nav__mobile-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+.nav__mobile-line {
+  width: 25px;
+  height: 3px;
+  background-color: var(--text-color);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+.nav__mobile-btn.active .nav__mobile-line:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.nav__mobile-btn.active .nav__mobile-line:nth-child(2) {
+  opacity: 0;
+}
+
+.nav__mobile-btn.active .nav__mobile-line:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Global Mobile Navigation Responsive Styles */
+@media screen and (max-width: 768px) {
+  .nav__mobile-btn {
+    display: flex;
+  }
+  
+  .nav__menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: var(--white-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .nav__menu.active {
+    transform: translateX(0);
+  }
+  
+  .nav__list {
+    flex-direction: column;
+    text-align: center;
+    gap: 2rem;
+  }
+  
+  .nav__link {
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  
+  .nav__dropdown-menu {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    background-color: transparent;
+    padding: 0;
+    margin-top: 0.5rem;
+  }
+  
+  .nav__dropdown-link {
+    padding: 0.5rem 0;
+  }
+  
+  .button--ghost {
+    display: inline-block;
+    margin-top: 1rem;
+  }
 }
 
 /* ========= AUTHENTICATION PAGES (Login, Signup) ========= */
