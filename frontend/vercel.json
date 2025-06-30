@@ -5,7 +5,7 @@
     { "source": "/signup", "destination": "/signup.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/scenarios", "destination": "/scenarios.html" },
-    { "source": "/trainer", "destination": "/trainer.html" }
+    { "source": "/trainer", "destination": "/trainer.html" },
     { "source": "/about", "destination": "/about.html" }
   ]
 }
