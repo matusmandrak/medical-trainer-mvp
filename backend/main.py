@@ -32,6 +32,7 @@ class ChatMessage(BaseModel):
     scenario_id: str
     history: List[str]
     message: str
+    current_emotional_state: str
 
 
 class EvaluationRequest(BaseModel):
@@ -115,7 +116,7 @@ async def get_scenario(scenario_id: str):
 
 @app.post("/api/chat")
 async def chat_endpoint(chat: ChatMessage):
-    """Generate a chat response using the OpenAI GPT model."""
+    """Generate a chat response using the OpenAI GPT model with emotional state machine."""
     # Fetch scenario persona prompt from DB
     session = SessionLocal()
     try:
@@ -123,20 +124,60 @@ async def chat_endpoint(chat: ChatMessage):
         if scenario is None:
             raise HTTPException(status_code=404, detail="Scenario not found.")
 
-        persona_prompt = (
-            "You are an advanced role-playing AI acting as a patient in a medical training simulation. Your performance must be realistic and dynamic. Follow these rules strictly:\n"
-            "1. **Embody the Character:** You must strictly adhere to the character's core personality, background, and emotional state as described in the profile below.\n"
-            "2. **Listen and React:** This is an interactive conversation. You must listen carefully to what the 'Doctor' says and have your character react in a logical and human-like way. If the Doctor is empathetic and makes concessions, your character should become calmer or more cooperative. If the Doctor is dismissive or rude, your character might become more upset or withdrawn. Your responses must not be repetitive; they must evolve based on the Doctor's input.\n"
-            "3. **Maintain the Goal:** The character has an underlying goal or fear. You should guide the conversation from the character's perspective, but you must be open to being persuaded or having your concerns addressed by a skilled Doctor.\n"
-            "4. **Stay in Character:** NEVER break character. Do not provide assistance, identify as an AI, or act as a therapist. Respond only and always as the character would.\n\n"
-            "Here is the character you must play:\n" + scenario.persona_prompt
-        )
+        base_persona_prompt = scenario.persona_prompt
     finally:
         session.close()
 
     client = OpenAI()  # Uses OPENAI_API_KEY from environment variables
 
-    # Build the message list for the chat completion
+    # Step 1: Determine new emotional state using preliminary AI call
+    emotional_state_prompt = (
+        f"The patient's current emotional state is {chat.current_emotional_state}. "
+        f"The Doctor just said: {chat.message}. "
+        "Based on this, what should the patient's new emotional state be? "
+        "Choose only one from this list: Calm, Cooperative, Resistant, Anxious, Agitated."
+    )
+
+    try:
+        emotional_state_completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": emotional_state_prompt}]
+        )
+        new_emotional_state = (emotional_state_completion.choices[0].message.content or "").strip()
+        
+        # Validate the emotional state is one of the allowed values
+        allowed_states = ["Calm", "Cooperative", "Resistant", "Anxious", "Agitated"]
+        if new_emotional_state not in allowed_states:
+            # Default to current state if AI returns invalid response
+            new_emotional_state = chat.current_emotional_state
+            
+    except Exception as e:
+        print(f"Emotional state determination failed: {str(e)}")
+        # Default to current state if call fails
+        new_emotional_state = chat.current_emotional_state
+
+        # Step 2: Build enhanced persona prompt with emotional state
+    emotional_state_guide = {
+        "Calm": "You are relaxed and composed. Speak in a measured tone, think before responding, show willingness to listen and consider suggestions. You're not rushed and can engage in thoughtful conversation.",
+        "Cooperative": "You are helpful and agreeable. You want to work with the doctor, readily provide information when asked, show appreciation for their help, and are open to following their recommendations.",
+        "Resistant": "You are defensive and argumentative. Push back against suggestions, question the doctor's recommendations, become stubborn about your position, and show skepticism about medical advice.",
+        "Anxious": "You are worried and nervous. Speak with urgency, ask many questions, seek constant reassurance, express fears about your condition, and may interrupt or speak quickly.",
+        "Agitated": "You are frustrated and impatient. Show irritation in your responses, become short or snappy, express anger about waiting or not being heard, and display visible frustration with the situation."
+    }
+    
+    emotional_behavior = emotional_state_guide.get(new_emotional_state, "Respond naturally based on the situation.")
+    
+    persona_prompt = (
+        "You are an advanced role-playing AI acting as a patient in a medical training simulation. Your performance must be realistic and dynamic. Follow these rules strictly:\n"
+        "1. **Embody the Character:** You must strictly adhere to the character's core personality, background, and emotional state as described in the profile below.\n"
+        "2. **Listen and React:** This is an interactive conversation. You must listen carefully to what the 'Doctor' says and have your character react in a logical and human-like way. If the Doctor is empathetic and makes concessions, your character should become calmer or more cooperative. If the Doctor is dismissive or rude, your character might become more upset or withdrawn. Your responses must not be repetitive; they must evolve based on the Doctor's input.\n"
+        "3. **Maintain the Goal:** The character has an underlying goal or fear. You should guide the conversation from the character's perspective, but you must be open to being persuaded or having your concerns addressed by a skilled Doctor.\n"
+        "4. **Stay in Character:** NEVER break character. Do not provide assistance, identify as an AI, or act as a therapist. Respond only and always as the character would.\n\n"
+        f"**CRITICAL EMOTIONAL STATE INSTRUCTION:** Your current emotional state is {new_emotional_state}. {emotional_behavior} This emotional state should be clearly evident in your tone, word choice, and behavior. Make sure every response reflects this emotional state authentically.\n\n"
+        f"Here is the character you must play:\n{base_persona_prompt}"
+    )
+
+    # Step 3: Build the message list for the main chat completion
     messages = [{"role": "system", "content": persona_prompt}]
 
     for idx, text in enumerate(chat.history):
@@ -146,7 +187,7 @@ async def chat_endpoint(chat: ChatMessage):
     # Add the current user message
     messages.append({"role": "user", "content": chat.message})
 
-    # Call the model in a thread to avoid blocking the event loop
+    # Step 4: Call the main role-playing model
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -156,7 +197,7 @@ async def chat_endpoint(chat: ChatMessage):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
 
-    # Generate audio using ElevenLabs
+    # Step 5: Generate audio using ElevenLabs
     audio_response_base64 = None
     try:
         # Check if ELEVENLABS_API_KEY is available
@@ -167,11 +208,11 @@ async def chat_endpoint(chat: ChatMessage):
             print("AI response text is empty")
         else:
             # Initialize ElevenLabs client with API key
-            client = ElevenLabs(api_key=elevenlabs_api_key)
+            elevenlabs_client = ElevenLabs(api_key=elevenlabs_api_key)
             
             # Generate audio using scenario-specific voice
             voice_id = getattr(scenario, 'voice_id', None) or "JBFqnCBsd6RMkjVDRZzb"
-            audio = client.text_to_speech.convert(
+            audio = elevenlabs_client.text_to_speech.convert(
                 text=ai_response.strip(),
                 voice_id=voice_id,
                 model_id="eleven_multilingual_v2",
@@ -203,7 +244,8 @@ async def chat_endpoint(chat: ChatMessage):
 
     return {
         "text_response": ai_response,
-        "audio_response_base64": audio_response_base64
+        "audio_response_base64": audio_response_base64,
+        "new_emotional_state": new_emotional_state
     }
 
 

@@ -59,6 +59,9 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         savedOpeningLine = scenario.opening_line
         savedVoiceId = scenario.voice_id
         
+        // Set the emotional state from scenario data
+        currentEmotionalState = scenario.initial_emotional_state || 'Neutral'
+        
         // Set the message limit from scenario data and update counter display
         messagesRemaining = scenario.message_limit || 20
         updateCounterUI()
@@ -80,6 +83,9 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
 
     // Message counter variables
     let messagesRemaining: number = 20
+
+    // Emotional state tracking
+    let currentEmotionalState: string = 'Neutral'
 
     // Auth controls
     const loginLink = document.querySelector<HTMLAnchorElement>('#login-link')
@@ -267,12 +273,22 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         const response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario_id: scenarioId, history: historyForAPI, message: userText }),
+          body: JSON.stringify({ 
+            scenario_id: scenarioId, 
+            history: historyForAPI, 
+            message: userText,
+            current_emotional_state: currentEmotionalState 
+          }),
         })
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const data = await response.json()
         const assistantText = data.text_response ?? ''
         const audioData = data.audio_response_base64
+        
+        // Update emotional state if provided in response
+        if (data.new_emotional_state) {
+          currentEmotionalState = data.new_emotional_state
+        }
 
         if (assistantText) {
           addMessageToChatWindow('assistant', assistantText)

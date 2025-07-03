@@ -21,6 +21,7 @@ class Scenario(Base):
     opening_line = Column(Text, nullable=False)
     voice_id = Column(String)
     message_limit = Column(Integer, nullable=False, server_default='20')
+    initial_emotional_state = Column(String)
 
     # Relationships
     skills = relationship(
