@@ -11,8 +11,9 @@ import asyncio
 from datetime import datetime
 import json
 from database import SessionLocal
-from models import Scenario, ScenarioSkill, Evaluation, EvaluationScore
+from models import Scenario, ScenarioSkill, Evaluation, EvaluationScore, CoachFeedback
 from supabase_client import supabase
+from coach_prompts import DEBRIEF_PROMPT, Q_AND_A_PROMPT, HINT_PROMPT
 from deepgram import DeepgramClient, PrerecordedOptions
 from elevenlabs.client import ElevenLabs
 import base64
@@ -61,6 +62,21 @@ class LoginRequest(BaseModel):
 class TextToSpeechRequest(BaseModel):
     text: str
     voice_id: Optional[str] = None
+
+
+# AI Coach Request Models
+class CoachFeedbackRequest(BaseModel):
+    evaluation_id: int
+
+
+class CoachChatRequest(BaseModel):
+    question: str
+    chat_history: List[str] = []
+
+
+class CoachHintRequest(BaseModel):
+    scenario_id: str
+    conversation_history: List[str]
 
 
 @app.get("/")
@@ -428,13 +444,20 @@ async def evaluate_endpoint(
             db_session.add(evaluation_score)
 
         db_session.commit()
+        
+        # Store evaluation_id before closing session
+        evaluation_id = evaluation_record.id
     except Exception as db_err:
         db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     finally:
         db_session.close()
 
-    return evaluation_data
+    # Return both evaluation data and evaluation_id
+    return {
+        "evaluation_id": evaluation_id,
+        **evaluation_data
+    }
 
 
 @app.post("/api/transcribe")
@@ -662,4 +685,177 @@ async def history_endpoint(authorization: str = Header(..., description="Bearer 
 
         return history
     finally:
-        session.close() 
+        session.close()
+
+
+# ---------------------------
+# AI Coach Endpoints
+# ---------------------------
+
+
+@app.post("/api/coach/generate-feedback")
+async def generate_feedback_endpoint(
+    request: CoachFeedbackRequest,
+    authorization: str = Header(..., description="Bearer access token"),
+):
+    """Generate comprehensive feedback for an evaluation using AI Coach."""
+
+    # Validate JWT token (same logic as other protected endpoints)
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing.")
+
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header must be in the format 'Bearer <token>'.")
+
+    jwt_token = authorization.split(" ", 1)[1]
+
+    try:
+        auth_res = supabase.auth.get_user(jwt_token)
+        err = getattr(auth_res, "error", None)
+        if err is not None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_obj = getattr(auth_res, "user", None)
+        if user_obj is None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_id = getattr(user_obj, "id", None)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Token validation failed: {str(e)}")
+
+    # Fetch evaluation and its scores from database
+    session = SessionLocal()
+    try:
+        evaluation = session.query(Evaluation).filter(
+            Evaluation.id == request.evaluation_id,
+            Evaluation.user_id == user_id  # Ensure user can only access their own evaluations
+        ).first()
+        
+        if evaluation is None:
+            raise HTTPException(status_code=404, detail="Evaluation not found or access denied.")
+
+        # Build rubric scores summary
+        scores_summary = []
+        for score in evaluation.scores:
+            scores_summary.append(f"- {score.skill_name}: {score.score}/5 - {score.justification}")
+        
+        rubric_summary = "\n".join(scores_summary)
+
+    finally:
+        session.close()
+
+    # Generate comprehensive feedback using OpenAI
+    client = OpenAI()
+    
+    feedback_prompt = f"""
+{DEBRIEF_PROMPT}
+
+**Conversation Transcript:**
+{evaluation.full_transcript}
+
+**Rubric-Based Evaluation:**
+{rubric_summary}
+"""
+
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": feedback_prompt}]
+        )
+        feedback_text = completion.choices[0].message.content or ""
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+
+    # Save feedback to database
+    session = SessionLocal()
+    try:
+        coach_feedback = CoachFeedback(
+            evaluation_id=request.evaluation_id,
+            feedback_text=feedback_text,
+            created_at=datetime.utcnow()
+        )
+        session.add(coach_feedback)
+        session.commit()
+        session.refresh(coach_feedback)
+    except Exception as db_err:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
+    finally:
+        session.close()
+
+    return {"feedback_text": feedback_text}
+
+
+@app.post("/api/coach/chat")
+async def coach_chat_endpoint(request: CoachChatRequest):
+    """AI Coach Q&A for medical communication skills."""
+    
+    # Build message history for context
+    messages = [{"role": "system", "content": Q_AND_A_PROMPT}]
+    
+    # Add chat history if provided
+    for idx, text in enumerate(request.chat_history):
+        role = "user" if idx % 2 == 0 else "assistant"
+        messages.append({"role": role, "content": text})
+    
+    # Add current question
+    messages.append({"role": "user", "content": request.question})
+
+    # Generate response using OpenAI
+    client = OpenAI()
+    
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages
+        )
+        response_text = completion.choices[0].message.content or ""
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+
+    return {"response": response_text}
+
+
+@app.post("/api/coach/hint")
+async def coach_hint_endpoint(request: CoachHintRequest):
+    """Provide real-time coaching hints during simulations."""
+    
+    # Fetch scenario goal from database
+    session = SessionLocal()
+    try:
+        scenario = session.query(Scenario).filter(Scenario.id == request.scenario_id).first()
+        if scenario is None:
+            raise HTTPException(status_code=404, detail="Scenario not found.")
+        
+        scenario_goal = scenario.goal
+    finally:
+        session.close()
+
+    # Build conversation history for context
+    conversation_text = "\n".join([f"Message {i+1}: {msg}" for i, msg in enumerate(request.conversation_history)])
+    
+    hint_prompt = f"""
+{HINT_PROMPT}
+
+**Scenario Goal:**
+{scenario_goal}
+
+**Conversation History:**
+{conversation_text}
+"""
+
+    # Generate hint using OpenAI
+    client = OpenAI()
+    
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": hint_prompt}]
+        )
+        hint_text = completion.choices[0].message.content or ""
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+
+    return {"hint": hint_text} 

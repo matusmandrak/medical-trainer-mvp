@@ -23,6 +23,7 @@
           <ul class="nav__list">
             <li class="nav__item"><a href="/dashboard" class="nav__link">Dashboard</a></li>
             <li class="nav__item"><a href="/scenarios" class="nav__link">Scenarios</a></li>
+            <li class="nav__item"><a href="/coach" class="nav__link">AI Coach</a></li>
             <li class="nav__item"><a href="/logout" class="nav__link">Logout</a></li>
           </ul>
         </div>
@@ -40,28 +41,37 @@
       </aside>
 
       <main class="app-main-content" id="app-main-content">
-        <button id="start-scenario-button" class="button-primary">Start Scenario</button>
-        
-        <div class="chat-header" style="display: none;" id="chat-header">
-          <div id="message-counter"></div>
+        <div class="main-content-wrapper">
+          <div class="chat-section">
+            <button id="start-scenario-button" class="button-primary">Start Scenario</button>
+            
+            <div class="chat-header" style="display: none;" id="chat-header">
+              <div id="message-counter"></div>
+            </div>
+
+            <div id="chat-window"></div>
+
+            <form id="message-form">
+              <input type="text" id="message-input" placeholder="Type your message..." required />
+              <button type="submit">Send</button>
+              <button type="button" id="mic-button" title="Voice Input">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M19 10V12C19 16.4183 15.4183 20 11 20H13C17.4183 20 21 16.4183 21 12V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 20V23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M8 23H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </form>
+
+            <button id="evaluate-button">Finish &amp; Get Feedback</button>
+          </div>
+          
+          <div class="hint-section">
+            <button id="ask-coach-hint-button" class="button-secondary coach-hint-button">Ask Coach for a Hint</button>
+            <div id="hint-display" class="hint-display" style="display: none;"></div>
+          </div>
         </div>
-
-        <div id="chat-window"></div>
-
-        <form id="message-form">
-          <input type="text" id="message-input" placeholder="Type your message..." required />
-          <button type="submit">Send</button>
-          <button type="button" id="mic-button" title="Voice Input">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M19 10V12C19 16.4183 15.4183 20 11 20H13C17.4183 20 21 16.4183 21 12V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 20V23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M8 23H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </form>
-
-        <button id="evaluate-button">Finish &amp; Get Feedback</button>
       </main>
     </div>
 

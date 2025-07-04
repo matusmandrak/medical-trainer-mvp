@@ -66,6 +66,11 @@ class Evaluation(Base):
         back_populates="evaluation",
         cascade="all, delete-orphan",
     )
+    coach_feedback = relationship(
+        "CoachFeedback",
+        back_populates="evaluation",
+        cascade="all, delete-orphan",
+    )
     scenario = relationship("Scenario", back_populates="evaluations")
 
 
@@ -81,4 +86,18 @@ class EvaluationScore(Base):
     justification = Column(Text, nullable=False)
 
     # Relationships
-    evaluation = relationship("Evaluation", back_populates="scores") 
+    evaluation = relationship("Evaluation", back_populates="scores")
+
+
+class CoachFeedback(Base):
+    """Stores coach feedback for an evaluation."""
+
+    __tablename__ = "coach_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    evaluation_id = Column(Integer, ForeignKey("evaluations.id"), nullable=False)
+    feedback_text = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    evaluation = relationship("Evaluation", back_populates="coach_feedback") 

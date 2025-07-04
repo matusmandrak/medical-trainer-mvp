@@ -16,6 +16,7 @@ export default defineConfig({
         dashboard: resolve(__dirname, 'dashboard.html'),
         scenarios: resolve(__dirname, 'scenarios.html'),
         about: resolve(__dirname, 'about.html'),
+        coach: resolve(__dirname, 'coach.html'),
       },
     },
   },

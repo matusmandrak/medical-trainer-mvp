@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Coach - Medical Trainer</title>
+  </head>
+  <body>
+    <header class="header">
+      <nav class="nav container">
+        <a href="/scenarios" class="nav__logo">MedComm Trainer</a>
+        
+        <!-- Mobile menu button -->
+        <button class="nav__mobile-btn" id="nav-mobile-btn" aria-label="Toggle navigation">
+          <span class="nav__mobile-line"></span>
+          <span class="nav__mobile-line"></span>
+          <span class="nav__mobile-line"></span>
+        </button>
+        
+        <div class="nav__menu" id="nav-menu">
+          <ul class="nav__list">
+            <li class="nav__item"><a href="/scenarios" class="nav__link">Scenarios</a></li>
+            <li class="nav__item"><a href="/dashboard" class="nav__link">Dashboard</a></li>
+            <li class="nav__item"><button id="logout-button" class="nav__link" style="background: none; border: none; cursor: pointer;">Logout</button></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <div class="coach-container">
+      <header class="coach-header">
+        <h1>AI Coach Feedback</h1>
+        <p>Get deeper insights and personalized coaching on your medical communication skills</p>
+      </header>
+
+      <!-- Top Row: Transcript and Analysis Side by Side -->
+      <div class="coach-top-row">
+        <!-- Left: Conversation Transcript -->
+        <div class="coach-panel transcript-panel">
+          <div class="panel-header">
+            <h2>Conversation Transcript</h2>
+          </div>
+          <div id="transcript-view" class="panel-content">
+            <!-- Transcript will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Right: AI Coach Analysis -->
+        <div class="coach-panel analysis-panel">
+          <div class="panel-header">
+            <h2>AI Coach Analysis</h2>
+          </div>
+          <div id="coach-feedback-display" class="panel-content">
+            <!-- AI coach feedback will be loaded here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Width Chat Section -->
+      <div class="coach-chat-section">
+        <div class="section-header">
+          <h2>Ask the Coach</h2>
+          <p>Have questions about your performance? Chat with the AI Coach for personalized guidance.</p>
+        </div>
+        
+        <div id="chat-window" class="chat-window">
+          <!-- Chat messages will appear here -->
+        </div>
+        
+        <form id="message-form" class="message-form">
+          <div class="input-group">
+            <input
+              type="text"
+              id="message-input"
+              placeholder="Ask the coach about your communication skills..."
+              autocomplete="off"
+            />
+            <button type="submit" class="send-button">Send</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Bottom: Recent Conversations List -->
+      <div class="recent-conversations-section">
+        <div class="section-header">
+          <h2>Recent Conversations</h2>
+          <p>Select any of your recent conversations to get professional AI Coach feedback</p>
+        </div>
+        
+        <div id="recent-conversations-list" class="conversations-grid">
+          <!-- Recent conversations will be loaded here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loading-modal" class="modal">
+      <div class="modal-content">
+        <div class="loading-spinner"></div>
+        <p>Generating comprehensive feedback...</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/coach.ts"></script>
+  </body>
+</html>

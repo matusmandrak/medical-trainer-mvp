@@ -80,6 +80,8 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     const startScenarioButton = document.querySelector<HTMLButtonElement>('#start-scenario-button')!
     const appMainContent = document.querySelector<HTMLElement>('.app-main-content')!
     const messageCounter = document.querySelector<HTMLDivElement>('#message-counter')!
+    const hintButton = document.querySelector<HTMLButtonElement>('#ask-coach-hint-button')!
+    const hintDisplay = document.querySelector<HTMLDivElement>('#hint-display')!
 
     // Message counter variables
     let messagesRemaining: number = 20
@@ -170,6 +172,72 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
       }
     }
 
+    /**
+     * Hide the hint display
+     */
+    function hideHint() {
+      if (hintDisplay) {
+        hintDisplay.style.display = 'none'
+        hintDisplay.innerHTML = ''
+      }
+    }
+
+    /**
+     * Show loading state for hint
+     */
+    function showHintLoading() {
+      if (hintDisplay) {
+        hintDisplay.style.display = 'block'
+        hintDisplay.className = 'hint-display loading'
+        hintDisplay.innerHTML = '<p>Getting a hint from your AI Coach...</p>'
+      }
+    }
+
+    /**
+     * Display hint content
+     */
+    function showHint(hintText: string) {
+      if (hintDisplay) {
+        hintDisplay.style.display = 'block'
+        hintDisplay.className = 'hint-display'
+        hintDisplay.innerHTML = `<p>${hintText}</p>`
+      }
+    }
+
+    /**
+     * Fetch hint from coach API
+     */
+    async function getHintFromCoach() {
+      try {
+        showHintLoading()
+        
+        // Prepare conversation history as array of strings (not joined string)
+        const conversationForHint = conversationHistory.map((item) => item.content)
+        
+        const response = await fetch(`${API_BASE_URL}/api/coach/hint`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            scenario_id: scenarioId, // Keep as string, don't convert to int
+            conversation_history: conversationForHint // Send as array of strings
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+
+        const data = await response.json()
+        showHint(data.hint || 'No specific hint available at this time.')
+        
+      } catch (err) {
+        console.error('Error getting hint:', err)
+        showHint('Sorry, I couldn\'t get a hint right now. Please try again later.')
+      }
+    }
+
     // For now, log to verify setup in dev mode
     if (import.meta.env.DEV) {
       console.log('API_BASE_URL', API_BASE_URL)
@@ -179,6 +247,11 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     let mediaRecorder: MediaRecorder | null = null
     let audioChunks: Blob[] = []
     let isRecording = false
+
+    // ---- Hint Button Logic ----
+    hintButton.addEventListener('click', async () => {
+      await getHintFromCoach()
+    })
 
     // ---- Voice Recording Logic ----
     micButton.addEventListener('click', async () => {
@@ -265,6 +338,10 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
       event.preventDefault()
       const userText = messageInput.value.trim()
       if (!userText) return
+      
+      // Hide any displayed hints when user sends a message
+      hideHint()
+      
       addMessageToChatWindow('user', userText)
       messageInput.value = ''
 
@@ -354,6 +431,9 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
       }
     })
 
+    // Store evaluation ID for coach feedback
+    let currentEvaluationId: number | null = null
+
     // ---- Evaluation flow ----
     async function handleEvaluation() {
       if (conversationHistory.length === 0) {
@@ -376,6 +456,12 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const evaluationData = await res.json()
+        
+        // Store evaluation_id if it exists in the response
+        if (evaluationData.evaluation_id) {
+          currentEvaluationId = evaluationData.evaluation_id
+        }
+        
         displayEvaluationResults(evaluationData)
       } catch (err) {
         console.error('Evaluation error:', err)
@@ -406,6 +492,20 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         feedbackContainer.appendChild(card)
       })
       
+      // Add AI Coach button if evaluation_id is available
+      if (currentEvaluationId && token) {
+        const coachButton = document.createElement('button')
+        coachButton.id = 'ask-coach-button'
+        coachButton.textContent = 'Get Deeper Feedback from AI Coach'
+        coachButton.className = 'coach-feedback-button'
+        feedbackContainer.appendChild(coachButton)
+        
+        // Add event listener for coach button
+        coachButton.addEventListener('click', () => {
+          window.location.href = `/coach?evaluation_id=${currentEvaluationId}`
+        })
+      }
+      
       // Show the evaluation modal
       const evaluationModal = document.getElementById('evaluation-modal')
       if (evaluationModal) {
@@ -414,6 +514,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     }
 
     evaluateButton.addEventListener('click', handleEvaluation)
+
     loadScenarioDetails()
   })()
 }
