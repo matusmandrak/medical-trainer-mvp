@@ -180,9 +180,33 @@ async def chat_endpoint(chat: ChatMessage):
     # Step 3: Build the message list for the main chat completion
     messages = [{"role": "system", "content": persona_prompt}]
 
-    for idx, text in enumerate(chat.history):
-        role = "user" if idx % 2 == 0 else "assistant"
-        messages.append({"role": role, "content": text})
+    # Short-term memory system: summarize if history exceeds threshold
+    if len(chat.history) > 8:
+        # Create summary of conversation history
+        full_history = "\n".join([f"Message {i+1}: {text}" for i, text in enumerate(chat.history)])
+        summary_prompt = f"Please summarize the key points and emotional progression of the following medical conversation into a few concise bullet points. Transcript: {full_history}"
+        
+        try:
+            summary_completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": summary_prompt}]
+            )
+            conversation_summary = (summary_completion.choices[0].message.content or "").strip()
+            
+            # Add summary as system message instead of full history
+            messages.append({"role": "system", "content": f"Here is a summary of the conversation so far: {conversation_summary}"})
+            
+        except Exception as e:
+            print(f"Conversation summary failed: {str(e)}")
+            # Fallback to full history if summary fails
+            for idx, text in enumerate(chat.history):
+                role = "user" if idx % 2 == 0 else "assistant"
+                messages.append({"role": role, "content": text})
+    else:
+        # Use full history for shorter conversations
+        for idx, text in enumerate(chat.history):
+            role = "user" if idx % 2 == 0 else "assistant"
+            messages.append({"role": role, "content": text})
 
     # Add the current user message
     messages.append({"role": "user", "content": chat.message})
