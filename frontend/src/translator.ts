@@ -87,7 +87,7 @@ class Translator {
 
   private async doLoadLanguageFile(langToLoad: string): Promise<void> {
     try {
-      const response = await fetch(`/src/${langToLoad}.json`);
+      const response = await fetch(`/${langToLoad}.json`);
       if (!response.ok) {
         throw new Error(`Failed to load ${langToLoad}.json`);
       }
