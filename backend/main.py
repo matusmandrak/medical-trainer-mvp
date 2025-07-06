@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Header, UploadFile, File
+from fastapi import FastAPI, HTTPException, Header, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
@@ -11,7 +11,7 @@ import asyncio
 from datetime import datetime
 import json
 from database import SessionLocal
-from models import Scenario, ScenarioSkill, Evaluation, EvaluationScore, CoachFeedback
+from models import Scenario, ScenarioSkill, Evaluation, EvaluationScore, CoachFeedback, ScenarioTranslation
 from supabase_client import supabase
 from coach_prompts import DEBRIEF_PROMPT, Q_AND_A_PROMPT, HINT_PROMPT
 from deepgram import DeepgramClient, PrerecordedOptions
@@ -34,11 +34,13 @@ class ChatMessage(BaseModel):
     history: List[str]
     message: str
     current_emotional_state: str
+    lang: Optional[str] = "en"  # Default to English
 
 
 class EvaluationRequest(BaseModel):
     scenario_id: str
     transcript: str
+    lang: Optional[str] = "en"  # Add language parameter
 
 
 # Shared credentials schema for auth endpoints
@@ -62,21 +64,29 @@ class LoginRequest(BaseModel):
 class TextToSpeechRequest(BaseModel):
     text: str
     voice_id: Optional[str] = None
+    lang: Optional[str] = "en"  # Default to English
 
 
 # AI Coach Request Models
 class CoachFeedbackRequest(BaseModel):
     evaluation_id: int
+    lang: Optional[str] = "en"  # Add language parameter
 
 
 class CoachChatRequest(BaseModel):
     question: str
     chat_history: List[str] = []
+    lang: Optional[str] = "en"  # Add language parameter
 
 
 class CoachHintRequest(BaseModel):
     scenario_id: str
     conversation_history: List[str]
+    lang: Optional[str] = "en"  # Add language parameter
+
+
+class UserSettingsRequest(BaseModel):
+    preferred_language: str
 
 
 @app.get("/")
@@ -85,45 +95,89 @@ async def read_root():
 
 
 @app.get("/api/scenarios")
-async def list_scenarios():
+async def list_scenarios(lang: str = Query("en", description="Language code (e.g., 'cs', 'sk', 'en')")):
     """Return a list of all scenarios with basic metadata."""
     session = SessionLocal()
     try:
-        scenarios = session.query(Scenario).all()
-        return [
-            {
-                "id": s.id,
-                "title": s.title,
-                "learning_path": s.learning_path,
-                "difficulty": s.difficulty,
-            }
-            for s in scenarios
-        ]
+        # Get scenarios with their translations for the requested language
+        scenarios_with_translations = (
+            session.query(Scenario, ScenarioTranslation)
+            .join(ScenarioTranslation, Scenario.id == ScenarioTranslation.scenario_id)
+            .filter(ScenarioTranslation.language_code == lang)
+            .all()
+        )
+        
+        # If no translations found for the requested language, fall back to English
+        if not scenarios_with_translations and lang != "en":
+            scenarios_with_translations = (
+                session.query(Scenario, ScenarioTranslation)
+                .join(ScenarioTranslation, Scenario.id == ScenarioTranslation.scenario_id)
+                .filter(ScenarioTranslation.language_code == "en")
+                .all()
+            )
+        
+        result = []
+        for scenario, translation in scenarios_with_translations:
+            result.append({
+                "id": scenario.id,
+                "title": translation.title,
+                "learning_path": translation.learning_path,
+                "difficulty": scenario.difficulty,
+                "description": translation.goal,  # Using goal as description
+            })
+        
+        return result
     finally:
         session.close()
 
 
 @app.get("/api/scenarios/{scenario_id}")
-async def get_scenario(scenario_id: str):
+async def get_scenario(scenario_id: str, lang: str = Query("en", description="Language code (e.g., 'cs', 'sk', 'en')")):
     """Return detailed information for a single scenario, including required skills."""
     session = SessionLocal()
     try:
+        # Get the base scenario
         scenario = session.query(Scenario).filter(Scenario.id == scenario_id).first()
         if scenario is None:
             raise HTTPException(status_code=404, detail="Scenario not found.")
 
+        # Get the translation for the requested language
+        translation = session.query(ScenarioTranslation).filter(
+            ScenarioTranslation.scenario_id == scenario_id,
+            ScenarioTranslation.language_code == lang
+        ).first()
+        
+        # If no translation found for the requested language, fall back to English
+        if not translation and lang != "en":
+            translation = session.query(ScenarioTranslation).filter(
+                ScenarioTranslation.scenario_id == scenario_id,
+                ScenarioTranslation.language_code == "en"
+            ).first()
+        
+        if not translation:
+            raise HTTPException(status_code=404, detail="Scenario translation not found.")
+
+        # Get skills
         skills = [skill.skill_name for skill in scenario.skills]
+
+        # Get appropriate voice_id based on language
+        voice_id = scenario.voice_id_en  # Default
+        if lang == "cs":
+            voice_id = scenario.voice_id_cs or scenario.voice_id_en
+        elif lang == "sk":
+            voice_id = scenario.voice_id_sk or scenario.voice_id_en
 
         return {
             "id": scenario.id,
-            "title": scenario.title,
-            "learning_path": scenario.learning_path,
+            "title": translation.title,
+            "learning_path": translation.learning_path,
             "difficulty": scenario.difficulty,
-            "goal": scenario.goal,
-            "persona_prompt": scenario.persona_prompt,
-            "opening_line": scenario.opening_line,
-            "voice_id": scenario.voice_id,
+            "goal": translation.goal,
+            "persona_prompt": translation.persona_prompt,
+            "opening_line": translation.opening_line,
+            "voice_id": voice_id,
             "message_limit": scenario.message_limit,
+            "initial_emotional_state": scenario.initial_emotional_state,
             "skills": skills,
         }
     finally:
@@ -140,7 +194,30 @@ async def chat_endpoint(chat: ChatMessage):
         if scenario is None:
             raise HTTPException(status_code=404, detail="Scenario not found.")
 
-        base_persona_prompt = scenario.persona_prompt
+        # Get the translation for the requested language
+        translation = session.query(ScenarioTranslation).filter(
+            ScenarioTranslation.scenario_id == chat.scenario_id,
+            ScenarioTranslation.language_code == chat.lang
+        ).first()
+        
+        # If no translation found for the requested language, fall back to English
+        if not translation and chat.lang != "en":
+            translation = session.query(ScenarioTranslation).filter(
+                ScenarioTranslation.scenario_id == chat.scenario_id,
+                ScenarioTranslation.language_code == "en"
+            ).first()
+        
+        if not translation:
+            raise HTTPException(status_code=404, detail="Scenario translation not found.")
+
+        base_persona_prompt = translation.persona_prompt
+
+        # Get appropriate voice_id based on language
+        voice_id = scenario.voice_id_en  # Default
+        if chat.lang == "cs":
+            voice_id = scenario.voice_id_cs or scenario.voice_id_en
+        elif chat.lang == "sk":
+            voice_id = scenario.voice_id_sk or scenario.voice_id_en
     finally:
         session.close()
 
@@ -183,7 +260,20 @@ async def chat_endpoint(chat: ChatMessage):
     
     emotional_behavior = emotional_state_guide.get(new_emotional_state, "Respond naturally based on the situation.")
     
+    # Add language instruction based on requested language
+    language_instructions = {
+        "cs": "Your entire response MUST be in the Czech language.",
+        "es": "Your entire response MUST be in the Spanish language.",
+        "de": "Your entire response MUST be in the German language.",
+        "fr": "Your entire response MUST be in the French language.",
+        "en": ""  # No instruction needed for English
+    }
+    
+    language_instruction = language_instructions.get(chat.lang or "en", "")
+    language_prefix = f"{language_instruction}\n\n" if language_instruction else ""
+    
     persona_prompt = (
+        f"{language_prefix}"
         "You are an advanced role-playing AI acting as a patient in a medical training simulation. Your performance must be realistic and dynamic. Follow these rules strictly:\n"
         "1. **Embody the Character:** You must strictly adhere to the character's core personality, background, and emotional state as described in the profile below.\n"
         "2. **Listen and React:** This is an interactive conversation. You must listen carefully to what the 'Doctor' says and have your character react in a logical and human-like way. If the Doctor is empathetic and makes concessions, your character should become calmer or more cooperative. If the Doctor is dismissive or rude, your character might become more upset or withdrawn. Your responses must not be repetitive; they must evolve based on the Doctor's input.\n"
@@ -250,8 +340,7 @@ async def chat_endpoint(chat: ChatMessage):
             # Initialize ElevenLabs client with API key
             elevenlabs_client = ElevenLabs(api_key=elevenlabs_api_key)
             
-            # Generate audio using scenario-specific voice
-            voice_id = getattr(scenario, 'voice_id', None) or "JBFqnCBsd6RMkjVDRZzb"
+            # Use the language-specific voice_id determined earlier
             audio = elevenlabs_client.text_to_speech.convert(
                 text=ai_response.strip(),
                 voice_id=voice_id,
@@ -362,9 +451,19 @@ async def evaluate_endpoint(
 
     rubric_text = "\n".join(rubric_sections)
 
+    # Add language instruction to the prompt
+    language_instruction = ""
+    if request.lang == "cs":
+        language_instruction = "Your justification text must be written in Czech language. "
+    elif request.lang == "sk":
+        language_instruction = "Your justification text must be written in Slovak language. "
+    else:
+        language_instruction = "Your justification text must be written in English language. "
+    
     # Build evaluator prompt
     master_prompt = (
         "You are an automated evaluation engine. Your entire response must be a single, valid JSON object and nothing else. "
+        f"{language_instruction}"
         "First, think step-by-step through the transcript and for each listed skill, write down your reasoning for the score. "
         "Your task is to score the performance of the 'Doctor' only. Do not score the 'Patient'. "
         "Your scoring and justification must be based exclusively on the lines beginning with 'Doctor:'. Any other lines should be ignored for scoring purposes. "
@@ -461,7 +560,7 @@ async def evaluate_endpoint(
 
 
 @app.post("/api/transcribe")
-async def transcribe_endpoint(audio_file: UploadFile = File(...)):
+async def transcribe_endpoint(audio_file: UploadFile = File(...), lang: str = Query("en", description="Language code for transcription (e.g., 'cs', 'en')")):
     """Transcribe an audio file using Deepgram API."""
     
     # Check if DEEPGRAM_API_KEY is available
@@ -480,10 +579,11 @@ async def transcribe_endpoint(audio_file: UploadFile = File(...)):
         # Read the audio file content
         audio_data = await audio_file.read()
         
-        # Configure options for transcription
+        # Configure options for transcription with language
         options = PrerecordedOptions(
             model="nova-2",
             smart_format=True,
+            language=lang,  # Set the language for transcription
         )
         
         # Send audio to Deepgram for transcription
@@ -518,10 +618,24 @@ async def text_to_speech_endpoint(request: TextToSpeechRequest):
         # Initialize ElevenLabs client with API key
         client = ElevenLabs(api_key=elevenlabs_api_key)
         
-        # Generate audio using specified voice or default to Rachel
+        # Determine voice_id based on language if not explicitly provided
+        if request.voice_id:
+            voice_id = request.voice_id
+        else:
+            # Map language codes to default voice IDs
+            default_voices = {
+                "en": "JBFqnCBsd6RMkjVDRZzb",  # Rachel (English)
+                "cs": "JBFqnCBsd6RMkjVDRZzb",  # Default to Rachel for now, can be updated
+                "es": "JBFqnCBsd6RMkjVDRZzb",  # Default to Rachel for now, can be updated
+                "de": "JBFqnCBsd6RMkjVDRZzb",  # Default to Rachel for now, can be updated
+                "fr": "JBFqnCBsd6RMkjVDRZzb",  # Default to Rachel for now, can be updated
+            }
+            voice_id = default_voices.get(request.lang, "JBFqnCBsd6RMkjVDRZzb")
+        
+        # Generate audio using determined voice
         audio = client.text_to_speech.convert(
             text=request.text.strip(),
-            voice_id=request.voice_id or "JBFqnCBsd6RMkjVDRZzb",  # Use provided voice_id or default to Rachel
+            voice_id=voice_id,
             model_id="eleven_multilingual_v2",
             output_format="mp3_44100_128"
         )
@@ -620,8 +734,60 @@ async def login_endpoint(credentials: LoginRequest):
 
 
 # ---------------------------
-# User History Endpoint
+# User History and Settings Endpoints
 # ---------------------------
+
+
+@app.post("/api/me/settings")
+async def update_user_settings(
+    request: UserSettingsRequest,
+    authorization: str = Header(..., description="Bearer access token"),
+):
+    """Update user settings like preferred language."""
+    
+    # Validate JWT token (same logic as other protected endpoints)
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing.")
+
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header must be in the format 'Bearer <token>'.")
+
+    jwt_token = authorization.split(" ", 1)[1]
+
+    try:
+        auth_res = supabase.auth.get_user(jwt_token)
+        err = getattr(auth_res, "error", None)
+        if err is not None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_obj = getattr(auth_res, "user", None)
+        if user_obj is None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+        user_id = getattr(user_obj, "id", None)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Token validation failed: {str(e)}")
+
+    # Update user metadata with preferred language
+    try:
+        update_response = supabase.auth.update_user({
+            "data": {
+                "preferred_language": request.preferred_language
+            }
+        })
+        
+        err = getattr(update_response, "error", None)
+        if err is not None:
+            raise HTTPException(status_code=400, detail=f"Failed to update user settings: {getattr(err, 'message', str(err))}")
+        
+        return {"message": "Settings updated successfully", "preferred_language": request.preferred_language}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update user settings: {str(e)}")
 
 
 @app.get("/api/me/history")
@@ -660,7 +826,7 @@ async def history_endpoint(authorization: str = Header(..., description="Bearer 
         evaluations = (
             session.query(Evaluation)
             .filter(Evaluation.user_id == user_id)
-            .order_by(Evaluation.created_at.asc())
+            .order_by(Evaluation.created_at.desc())
             .all()
         )
 
@@ -749,7 +915,18 @@ async def generate_feedback_endpoint(
     # Generate comprehensive feedback using OpenAI
     client = OpenAI()
     
+    # Add language instruction to the prompt
+    language_instruction = ""
+    if request.lang == "cs":
+        language_instruction = "Your entire response must be in Czech language. "
+    elif request.lang == "sk":
+        language_instruction = "Your entire response must be in Slovak language. "
+    else:
+        language_instruction = "Your entire response must be in English language. "
+    
     feedback_prompt = f"""
+{language_instruction}
+
 {DEBRIEF_PROMPT}
 
 **Conversation Transcript:**
@@ -792,8 +969,19 @@ async def generate_feedback_endpoint(
 async def coach_chat_endpoint(request: CoachChatRequest):
     """AI Coach Q&A for medical communication skills."""
     
+    # Add language instruction to the system prompt
+    language_instruction = ""
+    if request.lang == "cs":
+        language_instruction = "Your entire response must be in Czech language. "
+    elif request.lang == "sk":
+        language_instruction = "Your entire response must be in Slovak language. "
+    else:
+        language_instruction = "Your entire response must be in English language. "
+    
+    system_prompt = f"{language_instruction}\n\n{Q_AND_A_PROMPT}"
+    
     # Build message history for context
-    messages = [{"role": "system", "content": Q_AND_A_PROMPT}]
+    messages = [{"role": "system", "content": system_prompt}]
     
     # Add chat history if provided
     for idx, text in enumerate(request.chat_history):
@@ -829,15 +1017,42 @@ async def coach_hint_endpoint(request: CoachHintRequest):
         if scenario is None:
             raise HTTPException(status_code=404, detail="Scenario not found.")
         
-        scenario_goal = scenario.goal
+        # Get the translation for the requested language
+        translation = session.query(ScenarioTranslation).filter(
+            ScenarioTranslation.scenario_id == request.scenario_id,
+            ScenarioTranslation.language_code == request.lang
+        ).first()
+        
+        # If no translation found for the requested language, fall back to English
+        if not translation and request.lang != "en":
+            translation = session.query(ScenarioTranslation).filter(
+                ScenarioTranslation.scenario_id == request.scenario_id,
+                ScenarioTranslation.language_code == "en"
+            ).first()
+        
+        if not translation:
+            raise HTTPException(status_code=404, detail="Scenario translation not found.")
+            
+        scenario_goal = translation.goal
     finally:
         session.close()
 
     # Build conversation history for context
     conversation_text = "\n".join([f"Message {i+1}: {msg}" for i, msg in enumerate(request.conversation_history)])
     
+    # Add language instruction to the prompt
+    language_instruction = ""
+    if request.lang == "cs":
+        language_instruction = "Respond in Czech language."
+    elif request.lang == "sk":
+        language_instruction = "Respond in Slovak language."
+    else:
+        language_instruction = "Respond in English."
+    
     hint_prompt = f"""
 {HINT_PROMPT}
+
+{language_instruction}
 
 **Scenario Goal:**
 {scenario_goal}

@@ -38,6 +38,22 @@
               <li class="nav__item"><a href="/about" class="nav__link">About Us</a></li>
               <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
               <li class="nav__item"><a href="/signup" class="nav__link">Sign Up</a></li>
+              
+              <!-- Language Switcher -->
+              <li class="nav__item nav__dropdown">
+                <a href="#" class="nav__link nav__dropdown-toggle">
+                  🌐 Language
+                  <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+                <ul class="nav__dropdown-menu">
+                  <li><button data-language="en" class="nav__dropdown-link language-btn">English</button></li>
+                  <li><button data-language="cs" class="nav__dropdown-link language-btn">Čeština</button></li>
+                  <li><button data-language="sk" class="nav__dropdown-link language-btn">Slovenčina</button></li>
+                </ul>
+              </li>
+              
               <li class="nav__item"><a href="/" class="nav__link button button--ghost">Request a Demo</a></li>
             </ul>
           </div>
@@ -47,18 +63,18 @@
       <!-- Auth Main Content -->
       <main class="auth-main">
         <div class="auth-container">
-          <h1 class="auth-container__title">Welcome Back</h1>
+          <h1 class="auth-container__title" id="login-title">Welcome Back</h1>
           <form id="login-form" class="form">
             <div class="form-group">
-              <label for="email" class="form-label">Email Address</label>
+              <label for="email" class="form-label" id="email-label">Email Address</label>
               <input type="email" id="email" class="form-input" required placeholder="you@email.com" />
             </div>
             <div class="form-group">
-              <label for="password" class="form-label">Password</label>
+              <label for="password" class="form-label" id="password-label">Password</label>
               <input type="password" id="password" class="form-input" required />
             </div>
-            <button type="submit" class="button button--primary">Log In</button>
-            <p class="auth-link">Need an account? <a href="/signup">Sign up here.</a></p>
+            <button type="submit" class="button button--primary" id="login-button">Log In</button>
+            <p class="auth-link" id="signup-link">Need an account? <a href="/signup">Sign up here.</a></p>
           </form>
         </div>
       </main>
@@ -95,6 +111,7 @@
         }
       });
     </script>
+    <script type="module" src="/src/translator.ts"></script>
     <script type="module" src="/src/login.ts"></script>
   </body>
 </html> 

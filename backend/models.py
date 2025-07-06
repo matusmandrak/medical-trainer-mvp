@@ -13,15 +13,12 @@ class Scenario(Base):
     __tablename__ = "scenarios"
 
     id = Column(String, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    learning_path = Column(String, nullable=False)
     difficulty = Column(String, nullable=False)
-    goal = Column(Text, nullable=False)
-    persona_prompt = Column(Text, nullable=False)
-    opening_line = Column(Text, nullable=False)
-    voice_id = Column(String)
     message_limit = Column(Integer, nullable=False, server_default='20')
     initial_emotional_state = Column(String)
+    voice_id_en = Column(String)  # English voice
+    voice_id_cs = Column(String)  # Czech voice
+    voice_id_sk = Column(String)  # Slovak voice
 
     # Relationships
     skills = relationship(
@@ -31,6 +28,11 @@ class Scenario(Base):
     )
     evaluations = relationship(
         "Evaluation",
+        back_populates="scenario",
+        cascade="all, delete-orphan",
+    )
+    translations = relationship(
+        "ScenarioTranslation",
         back_populates="scenario",
         cascade="all, delete-orphan",
     )
@@ -47,6 +49,24 @@ class ScenarioSkill(Base):
 
     # Relationships
     scenario = relationship("Scenario", back_populates="skills")
+
+
+class ScenarioTranslation(Base):
+    """Stores translated content for scenarios in different languages."""
+
+    __tablename__ = "scenario_translations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scenario_id = Column(String, ForeignKey("scenarios.id"), nullable=False)
+    language_code = Column(String, nullable=False)  # e.g., 'en', 'cs', 'sk'
+    title = Column(String, nullable=False)
+    learning_path = Column(String, nullable=False)
+    goal = Column(Text, nullable=False)
+    persona_prompt = Column(Text, nullable=False)
+    opening_line = Column(Text, nullable=False)
+
+    # Relationships
+    scenario = relationship("Scenario", back_populates="translations")
 
 
 class Evaluation(Base):

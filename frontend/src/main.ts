@@ -1,4 +1,41 @@
 import '../style.css'
+import { t, getCurrentLanguage, translatorReady } from './translator'
+
+// Translation update function for trainer page
+async function updateTrainerUIText() {
+  // Wait for translator to be ready
+  try {
+    await translatorReady;
+  } catch (error) {
+    console.error('Failed to load translations:', error);
+  }
+
+  // Navigation
+  const navDashboard = document.getElementById('nav-dashboard');
+  const navScenarios = document.getElementById('nav-scenarios');
+  const navCoach = document.getElementById('nav-coach');
+  const navLogout = document.getElementById('nav-logout');
+  const navLanguage = document.getElementById('nav-language');
+
+  if (navDashboard) navDashboard.textContent = t('nav.dashboard');
+  if (navScenarios) navScenarios.textContent = t('nav.scenarios');
+  if (navCoach) navCoach.textContent = t('nav.ai_coach');
+  if (navLogout) navLogout.textContent = t('nav.logout');
+  if (navLanguage) navLanguage.textContent = t('nav.language');
+
+  // Trainer content
+  const startScenarioButton = document.getElementById('start-scenario-button');
+  const sendButton = document.getElementById('send-button');
+  const evaluateButton = document.getElementById('evaluate-button');
+  const messageInput = document.getElementById('message-input') as HTMLInputElement;
+  const askCoachHintButton = document.getElementById('ask-coach-hint-button');
+
+  if (startScenarioButton) startScenarioButton.textContent = t('trainer.start_scenario');
+  if (sendButton) sendButton.textContent = t('trainer.send');
+  if (evaluateButton) evaluateButton.textContent = t('trainer.finish_feedback');
+  if (messageInput) messageInput.placeholder = t('trainer.type_message');
+  if (askCoachHintButton) askCoachHintButton.textContent = t('trainer.ask_coach_hint');
+}
 
 if (document.querySelector<HTMLDivElement>('#chat-window')) {
   // ---------------------- Trainer Page Logic ----------------------
@@ -19,10 +56,11 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     // Fetch scenario details and populate sidebar
     async function loadScenarioDetails() {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/scenarios/${encodeURIComponent(scenarioId!)}`)
+        const res = await fetch(`${API_BASE_URL}/api/scenarios/${encodeURIComponent(scenarioId!)}?lang=${getCurrentLanguage()}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
         const scenario = (await res.json()) as Record<string, any>
+        console.log('Loaded scenario details:', scenario)
 
         const descContainer = document.querySelector<HTMLDivElement>('.scenario-description')
         if (descContainer) {
@@ -31,29 +69,21 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
             <p><strong>Overview:</strong> ${scenario.goal ?? 'No goal defined.'}</p>
             <p><strong>Learning Path:</strong> ${scenario.learning_path ?? 'N/A'}</p>
             <p><strong>Difficulty:</strong> ${scenario.difficulty ?? 'N/A'}</p>
-          `;
-
-          // --- THIS IS THE NEW CODE YOU ADD ---
-          const patientNameHeader = document.getElementById('patient-name-header');
-          if (patientNameHeader && scenario.persona_name) {
-            patientNameHeader.textContent = `Conversation with ${scenario.persona_name}`;
-          }
-          // --- END OF NEW CODE ---
+          `
         }
-
-        
       
-        // --- New block to display skills ---
+        // Display skills from the skills array
         const skillsContainer = document.querySelector<HTMLDivElement>('.skills-to-practice')
-        const rubric = scenario.rubric as Record<string, string> | undefined
+        const skills = scenario.skills as string[] | undefined
 
-        if (skillsContainer && rubric) {
-          const skillsList = Object.keys(rubric)
+        if (skillsContainer && skills && skills.length > 0) {
+          const skillsList = skills
             .map((skill) => `<li>${skill}</li>`)
             .join('')
-          skillsContainer.innerHTML = `<h4>Skills to Practice:</h4><ul>${skillsList}</ul>`
+          skillsContainer.innerHTML = `<h4>${t('trainer.skills_to_practice')}</h4><ul>${skillsList}</ul>`
+        } else if (skillsContainer) {
+          skillsContainer.innerHTML = `<h4>${t('trainer.skills_to_practice')}</h4><p>No specific skills defined.</p>`
         }
-        // --- End of new block ---
 
         // Store the opening line and voice_id for later use when scenario starts
         savedOpeningLine = scenario.opening_line
@@ -67,6 +97,16 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         updateCounterUI()
       } catch (err) {
         console.error('Failed to load scenario details:', err)
+        
+        // Show error in the scenario description area
+        const descContainer = document.querySelector<HTMLDivElement>('.scenario-description')
+        if (descContainer) {
+          descContainer.innerHTML = `
+            <h3>Error Loading Scenario</h3>
+            <p>Unable to load scenario details. Please check your connection and try again.</p>
+            <button onclick="window.location.reload()" class="button-secondary">Reload Page</button>
+          `
+        }
       }
     }
 
@@ -168,7 +208,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     function updateCounterUI() {
       const counterElement = document.querySelector<HTMLDivElement>('#message-counter')
       if (counterElement) {
-        counterElement.textContent = `Messages Remaining: ${messagesRemaining}`
+        counterElement.textContent = t('trainer.messages_remaining', { count: messagesRemaining })
       }
     }
 
@@ -189,7 +229,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
       if (hintDisplay) {
         hintDisplay.style.display = 'block'
         hintDisplay.className = 'hint-display loading'
-        hintDisplay.innerHTML = '<p>Getting a hint from your AI Coach...</p>'
+        hintDisplay.innerHTML = `<p>${t('trainer.getting_hint')}</p>`
       }
     }
 
@@ -221,7 +261,8 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
           },
           body: JSON.stringify({
             scenario_id: scenarioId, // Keep as string, don't convert to int
-            conversation_history: conversationForHint // Send as array of strings
+            conversation_history: conversationForHint, // Send as array of strings
+            lang: getCurrentLanguage()
           })
         })
 
@@ -230,11 +271,11 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         }
 
         const data = await response.json()
-        showHint(data.hint || 'No specific hint available at this time.')
+        showHint(data.hint || t('trainer.no_hint_available'))
         
       } catch (err) {
         console.error('Error getting hint:', err)
-        showHint('Sorry, I couldn\'t get a hint right now. Please try again later.')
+        showHint(t('trainer.hint_error'))
       }
     }
 
@@ -307,7 +348,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         formData.append('audio_file', audioBlob, 'recording.wav')
         
         // Send to transcription endpoint
-        const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
+        const response = await fetch(`${API_BASE_URL}/api/transcribe?lang=${getCurrentLanguage()}`, {
           method: 'POST',
           body: formData
         })
@@ -354,7 +395,8 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
             scenario_id: scenarioId, 
             history: historyForAPI, 
             message: userText,
-            current_emotional_state: currentEmotionalState 
+            current_emotional_state: currentEmotionalState,
+            lang: getCurrentLanguage()
           }),
         })
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -399,6 +441,12 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
       // Hide the start scenario button
       startScenarioButton.style.display = 'none'
       
+      // Show the chat header
+      const chatHeader = document.getElementById('chat-header')
+      if (chatHeader) {
+        chatHeader.style.display = 'block'
+      }
+      
       // Show the chat interface by adding active class
       appMainContent.classList.add('active')
       
@@ -412,7 +460,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
           const ttsResponse = await fetch(`${API_BASE_URL}/api/text-to-speech`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: savedOpeningLine, voice_id: savedVoiceId })
+            body: JSON.stringify({ text: savedOpeningLine, voice_id: savedVoiceId, lang: getCurrentLanguage() })
           })
           
           if (ttsResponse.ok) {
@@ -428,6 +476,10 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         } catch (ttsErr) {
           console.error('Error generating opening line audio:', ttsErr)
         }
+      } else {
+        // If no opening line, show a generic message
+        addMessageToChatWindow('assistant', 'Hello! I\'m ready to begin our conversation. How can I help you today?')
+        conversationHistory.push({ role: 'assistant', content: 'Hello! I\'m ready to begin our conversation. How can I help you today?' })
       }
     })
 
@@ -440,21 +492,39 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         addMessageToChatWindow('assistant', 'Please have a conversation before requesting feedback.')
         return
       }
+      
+      if (!scenarioId) {
+        addMessageToChatWindow('assistant', 'Scenario ID is missing. Please reload the page.')
+        return
+      }
+      
       evaluateButton.disabled = true
       const originalText = evaluateButton.textContent
-      evaluateButton.textContent = 'Evaluating...'
+      evaluateButton.textContent = t('trainer.evaluating')
+      
       try {
         const transcript = conversationHistory
           .map(({ role, content }) => `${role === 'user' ? 'Doctor' : 'Patient'}: ${content}`)
           .join('\n')
+        
         const headers: Record<string, string> = { 'Content-Type': 'application/json' }
         if (token) headers['Authorization'] = `Bearer ${token}`
+        
         const res = await fetch(`${API_BASE_URL}/api/evaluate`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ transcript, scenario_id: scenarioId }),
+          body: JSON.stringify({ 
+            transcript, 
+            scenario_id: scenarioId, 
+            lang: getCurrentLanguage() 
+          }),
         })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        
+        if (!res.ok) {
+          const errorText = await res.text()
+          throw new Error(`HTTP ${res.status}: ${errorText}`)
+        }
+        
         const evaluationData = await res.json()
         
         // Store evaluation_id if it exists in the response
@@ -465,7 +535,8 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
         displayEvaluationResults(evaluationData)
       } catch (err) {
         console.error('Evaluation error:', err)
-        addMessageToChatWindow('assistant', 'Failed to fetch evaluation.')
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+        addMessageToChatWindow('assistant', `Failed to fetch evaluation: ${errorMessage}`)
       } finally {
         evaluateButton.disabled = false
         evaluateButton.textContent = originalText ?? 'Finish & Get Feedback'
@@ -496,7 +567,7 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
       if (currentEvaluationId && token) {
         const coachButton = document.createElement('button')
         coachButton.id = 'ask-coach-button'
-        coachButton.textContent = 'Get Deeper Feedback from AI Coach'
+        coachButton.textContent = t('trainer.get_deeper_feedback')
         coachButton.className = 'coach-feedback-button'
         feedbackContainer.appendChild(coachButton)
         
@@ -518,3 +589,6 @@ if (document.querySelector<HTMLDivElement>('#chat-window')) {
     loadScenarioDetails()
   })()
 }
+
+// Initialize translations when DOM is loaded
+document.addEventListener('DOMContentLoaded', updateTrainerUIText)

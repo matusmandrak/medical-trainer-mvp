@@ -24,20 +24,36 @@
           <ul class="nav__list">
             <li class="nav__item nav__dropdown">
               <a href="#" class="nav__link nav__dropdown-toggle">
-                Solutions
+                <span id="nav-solutions">Solutions</span>
                 <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </a>
               <ul class="nav__dropdown-menu">
-                <li><a href="/scenarios" class="nav__dropdown-link">Scenarios</a></li>
+                <li><a href="/scenarios" class="nav__dropdown-link" id="nav-scenarios">Scenarios</a></li>
               </ul>
             </li>
-            <li class="nav__item"><a href="/" class="nav__link">Pricing</a></li>
-            <li class="nav__item"><a href="/about" class="nav__link">About Us</a></li>
-            <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
-            <li class="nav__item"><a href="/signup" class="nav__link">Sign Up</a></li>
-            <li class="nav__item"><a href="/" class="nav__link button button--ghost">Request a Demo</a></li>
+            <li class="nav__item"><a href="/" class="nav__link" id="nav-pricing">Pricing</a></li>
+            <li class="nav__item"><a href="/about" class="nav__link" id="nav-about">About Us</a></li>
+            <li class="nav__item"><a href="/login" class="nav__link" id="nav-login">Login</a></li>
+            <li class="nav__item"><a href="/signup" class="nav__link" id="nav-signup">Sign Up</a></li>
+            
+            <!-- Language Switcher -->
+            <li class="nav__item nav__dropdown">
+              <a href="#" class="nav__link nav__dropdown-toggle">
+                🌐 <span id="nav-language">Language</span>
+                <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <ul class="nav__dropdown-menu">
+                <li><button data-language="en" class="nav__dropdown-link language-btn">English</button></li>
+                <li><button data-language="cs" class="nav__dropdown-link language-btn">Čeština</button></li>
+                <li><button data-language="sk" class="nav__dropdown-link language-btn">Slovenčina</button></li>
+              </ul>
+            </li>
+            
+            <li class="nav__item"><a href="/" class="nav__link button button--ghost" id="nav-demo">Request a Demo</a></li>
           </ul>
         </div>
       </nav>
@@ -46,9 +62,9 @@
     <section class="hero section">
       <div class="hero__container container">
         <div class="hero__data">
-          <h1 class="hero__title">The Flight Simulator for Healthcare's Most Critical Conversations.</h1>
-          <p class="hero__subtitle">Master patient communication with a safe, AI-powered training platform for medical students, practitioners, and healthcare institutions.</p>
-          <a href="/scenarios" class="button hero__button">Try a Free Scenario</a>
+          <h1 class="hero__title" id="hero-title">The Flight Simulator for Healthcare's Most Critical Conversations.</h1>
+          <p class="hero__subtitle" id="hero-subtitle">Master patient communication with a safe, AI-powered training platform for medical students, practitioners, and healthcare institutions.</p>
+          <a href="/scenarios" class="button hero__button" id="hero-cta">Try a Free Scenario</a>
         </div>
         <div class="hero__visual">
           <div class="hero__pulse-container">
@@ -74,7 +90,7 @@
 
     <section class="logos section">
       <div class="logos__container container">
-        <h3 class="logos__title">TRUSTED BY LEADING HEALTHCARE INSTITUTIONS</h3>
+        <h3 class="logos__title" id="logos-title">TRUSTED BY LEADING HEALTHCARE INSTITUTIONS</h3>
         <div class="logos__grid">
           <span class="logos__item">UNIVERSITY HEALTH</span>
           <span class="logos__item">INNOVATE MEDICAL</span>
@@ -85,45 +101,45 @@
     </section>
 
     <section class="steps section" id="about">
-      <h2 class="section__title">A Better Way to Learn</h2>
-      <p class="section__subtitle">Practice critical conversations in three simple steps.</p>
+      <h2 class="section__title" id="steps-title">A Better Way to Learn</h2>
+      <p class="section__subtitle" id="steps-subtitle">Practice critical conversations in three simple steps.</p>
       <div class="steps__container container grid">
         <div class="steps__card">
           <div class="steps__card-number">1</div>
-          <h3 class="steps__card-title">Choose Your Scenario</h3>
-          <p class="steps__card-description">Select from a wide range of realistic patient encounters, from routine check-ups to delivering difficult news.</p>
+          <h3 class="steps__card-title" id="step1-title">Choose Your Scenario</h3>
+          <p class="steps__card-description" id="step1-description">Select from a wide range of realistic patient encounters, from routine check-ups to delivering difficult news.</p>
         </div>
         <div class="steps__card">
           <div class="steps__card-number">2</div>
-          <h3 class="steps__card-title">Talk with an AI Patient</h3>
-          <p class="steps__card-description">Engage in natural, voice-based conversation. Our AI adapts to your communication style in real-time.</p>
+          <h3 class="steps__card-title" id="step2-title">Talk with an AI Patient</h3>
+          <p class="steps__card-description" id="step2-description">Engage in natural, voice-based conversation. Our AI adapts to your communication style in real-time.</p>
         </div>
         <div class="steps__card">
           <div class="steps__card-number">3</div>
-          <h3 class="steps__card-title">Get Instant Feedback</h3>
-          <p class="steps__card-description">Receive a detailed analysis of your performance, highlighting strengths and areas for improvement.</p>
+          <h3 class="steps__card-title" id="step3-title">Get Instant Feedback</h3>
+          <p class="steps__card-description" id="step3-description">Receive a detailed analysis of your performance, highlighting strengths and areas for improvement.</p>
         </div>
       </div>
     </section>
 
     <section class="solutions section">
       <div class="container">
-        <h2 class="section__title solutions__title">Solutions for every stage of your career</h2>
+        <h2 class="section__title solutions__title" id="solutions-title">Solutions for every stage of your career</h2>
         <div class="solutions__grid">
           <div class="solutions__card">
-            <h3 class="solutions__card-title">FOR MEDICAL STUDENTS</h3>
-            <p class="solutions__card-description">Ace your OSCEs and build confidence before your first rotation. Master the skills they don't teach in textbooks.</p>
-            <a href="/signup" class="button solutions__card-button">Learn more for students</a>
+            <h3 class="solutions__card-title" id="students-title">FOR MEDICAL STUDENTS</h3>
+            <p class="solutions__card-description" id="students-description">Ace your OSCEs and build confidence before your first rotation. Master the skills they don't teach in textbooks.</p>
+            <a href="/signup" class="button solutions__card-button" id="students-button">Learn more for students</a>
           </div>
           <div class="solutions__card">
-            <h3 class="solutions__card-title">FOR PRACTITIONERS</h3>
-            <p class="solutions__card-description">Sharpen your skills, earn CME credits, and improve patient outcomes. Handle complex conversations with less stress and more success.</p>
-            <a href="/signup" class="button solutions__card-button">Learn more for practitioners</a>
+            <h3 class="solutions__card-title" id="practitioners-title">FOR PRACTITIONERS</h3>
+            <p class="solutions__card-description" id="practitioners-description">Sharpen your skills, earn CME credits, and improve patient outcomes. Handle complex conversations with less stress and more success.</p>
+            <a href="/signup" class="button solutions__card-button" id="practitioners-button">Learn more for practitioners</a>
           </div>
           <div class="solutions__card">
-            <h3 class="solutions__card-title">FOR INSTITUTIONS</h3>
-            <p class="solutions__card-description">Reduce medical errors, improve patient safety metrics, and standardize training across your organization.</p>
-            <a href="/" class="button solutions__card-button">Request a Demo</a>
+            <h3 class="solutions__card-title" id="institutions-title">FOR INSTITUTIONS</h3>
+            <p class="solutions__card-description" id="institutions-description">Reduce medical errors, improve patient safety metrics, and standardize training across your organization.</p>
+            <a href="/" class="button solutions__card-button" id="institutions-button">Request a Demo</a>
           </div>
         </div>
       </div>
@@ -133,12 +149,12 @@
       <div class="container">
         <div class="testimonials__grid">
           <div class="testimonials__card">
-            <p class="testimonials__quote">"MedCommTrainer was a game-changer for my OSCE prep. I felt so much more prepared and confident than my peers."</p>
-            <p class="testimonials__author">- 4th Year Medical Student</p>
+            <p class="testimonials__quote" id="testimonial1-quote">"MedCommTrainer was a game-changer for my OSCE prep. I felt so much more prepared and confident than my peers."</p>
+            <p class="testimonials__author" id="testimonial1-author">- 4th Year Medical Student</p>
           </div>
           <div class="testimonials__card">
-            <p class="testimonials__quote">"This is the tool I wish I had 20 years ago. It's an incredibly effective way to practice and refine the art of communication on your own time."</p>
-            <p class="testimonials__author">- Attending Physician</p>
+            <p class="testimonials__quote" id="testimonial2-quote">"This is the tool I wish I had 20 years ago. It's an incredibly effective way to practice and refine the art of communication on your own time."</p>
+            <p class="testimonials__author" id="testimonial2-author">- Attending Physician</p>
           </div>
         </div>
       </div>
@@ -156,9 +172,9 @@
         </svg>
       </div>
       <div class="final-cta__container container">
-        <h2 class="final-cta__title">Ready to Transform Your Communication?</h2>
-        <p class="final-cta__subtitle">Start your journey towards more empathetic and effective patient care today.</p>
-        <a href="/login" class="button final-cta__button">Get Started for Free</a>
+        <h2 class="final-cta__title" id="final-cta-title">Ready to Transform Your Communication?</h2>
+        <p class="final-cta__subtitle" id="final-cta-subtitle">Start your journey towards more empathetic and effective patient care today.</p>
+        <a href="/login" class="button final-cta__button" id="final-cta-button">Get Started for Free</a>
       </div>
     </section>
 
@@ -166,30 +182,30 @@
       <div class="footer__container container">
         <div class="footer__grid">
           <div class="footer__column">
-            <h3 class="footer__brand">Medical Communication Trainer</h3>
-            <p class="footer__copyright">© 2025 All rights reserved.</p>
+            <h3 class="footer__brand" id="footer-brand">Medical Communication Trainer</h3>
+            <p class="footer__copyright" id="footer-copyright">© 2025 All rights reserved.</p>
           </div>
           <div class="footer__column">
-            <h4 class="footer__title">Solutions</h4>
+            <h4 class="footer__title" id="footer-solutions-title">Solutions</h4>
             <ul class="footer__links">
-              <li><a href="/signup" class="footer__link">For Students</a></li>
-              <li><a href="/signup" class="footer__link">For Practitioners</a></li>
-              <li><a href="/" class="footer__link">For Institutions</a></li>
+              <li><a href="/signup" class="footer__link" id="footer-students">For Students</a></li>
+              <li><a href="/signup" class="footer__link" id="footer-practitioners">For Practitioners</a></li>
+              <li><a href="/" class="footer__link" id="footer-institutions">For Institutions</a></li>
             </ul>
           </div>
           <div class="footer__column">
-            <h4 class="footer__title">Company</h4>
+            <h4 class="footer__title" id="footer-company-title">Company</h4>
             <ul class="footer__links">
-              <li><a href="/about" class="footer__link">About Us</a></li>
-              <li><a href="/" class="footer__link">Blog</a></li>
-              <li><a href="/" class="footer__link">Contact</a></li>
+              <li><a href="/about" class="footer__link" id="footer-about">About Us</a></li>
+              <li><a href="/" class="footer__link" id="footer-blog">Blog</a></li>
+              <li><a href="/" class="footer__link" id="footer-contact">Contact</a></li>
             </ul>
           </div>
           <div class="footer__column">
-            <h4 class="footer__title">Legal</h4>
+            <h4 class="footer__title" id="footer-legal-title">Legal</h4>
             <ul class="footer__links">
-              <li><a href="/" class="footer__link">Privacy Policy</a></li>
-              <li><a href="/" class="footer__link">Terms of Service</a></li>
+              <li><a href="/" class="footer__link" id="footer-privacy">Privacy Policy</a></li>
+              <li><a href="/" class="footer__link" id="footer-terms">Terms of Service</a></li>
             </ul>
           </div>
         </div>
@@ -227,5 +243,8 @@
         }
       });
     </script>
+    
+    <script type="module" src="/src/translator.ts"></script>
+    <script type="module" src="/src/homepage.ts"></script>
   </body>
 </html> 

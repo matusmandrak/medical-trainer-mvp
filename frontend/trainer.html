@@ -21,10 +21,25 @@
         
         <div class="nav__menu" id="nav-menu">
           <ul class="nav__list">
-            <li class="nav__item"><a href="/dashboard" class="nav__link">Dashboard</a></li>
-            <li class="nav__item"><a href="/scenarios" class="nav__link">Scenarios</a></li>
-            <li class="nav__item"><a href="/coach" class="nav__link">AI Coach</a></li>
-            <li class="nav__item"><a href="/logout" class="nav__link">Logout</a></li>
+            <li class="nav__item"><a href="/dashboard" class="nav__link" id="nav-dashboard">Dashboard</a></li>
+            <li class="nav__item"><a href="/scenarios" class="nav__link" id="nav-scenarios">Scenarios</a></li>
+            <li class="nav__item"><a href="/coach" class="nav__link" id="nav-coach">AI Coach</a></li>
+            <li class="nav__item"><a href="/logout" class="nav__link" id="nav-logout">Logout</a></li>
+            
+            <!-- Language Switcher -->
+            <li class="nav__item nav__dropdown">
+              <a href="#" class="nav__link nav__dropdown-toggle">
+                🌐 <span id="nav-language">Language</span>
+                <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <ul class="nav__dropdown-menu">
+                <li><button data-language="en" class="nav__dropdown-link language-btn">English</button></li>
+                <li><button data-language="cs" class="nav__dropdown-link language-btn">Čeština</button></li>
+                <li><button data-language="sk" class="nav__dropdown-link language-btn">Slovenčina</button></li>
+              </ul>
+            </li>
           </ul>
         </div>
       </nav>
@@ -53,7 +68,7 @@
 
             <form id="message-form">
               <input type="text" id="message-input" placeholder="Type your message..." required />
-              <button type="submit">Send</button>
+              <button type="submit" id="send-button">Send</button>
               <button type="button" id="mic-button" title="Voice Input">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -179,6 +194,8 @@
         });
       });
     </script>
+    
+    <script type="module" src="/src/translator.ts"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html> 

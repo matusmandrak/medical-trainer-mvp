@@ -3892,3 +3892,36 @@ body:has(.app-layout) .nav__mobile-line {
   }
 }
 
+/* Add this CSS for language switcher styling */
+
+.language-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.language-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.language-btn.active {
+  background-color: var(--primary-color, #007bff);
+  color: white;
+}
+
+.language-btn.active:hover {
+  background-color: var(--primary-color-dark, #0056b3);
+}
+
+/* Ensure language buttons fit properly in dropdown */
+.nav__dropdown-menu .language-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+

@@ -1,4 +1,50 @@
 import '../style.css'
+import { t, getCurrentLanguage, translatorReady } from './translator'
+
+// Translation update function
+async function updateUIText() {
+  // Wait for translator to be ready
+  try {
+    await translatorReady;
+  } catch (error) {
+    console.error('Failed to load translations:', error);
+  }
+  // Navigation
+  const navScenarios = document.getElementById('nav-scenarios');
+  const navDashboard = document.getElementById('nav-dashboard');
+  const navLogout = document.getElementById('nav-logout');
+  const navLanguage = document.getElementById('nav-language');
+
+  if (navScenarios) navScenarios.textContent = t('nav.scenarios');
+  if (navDashboard) navDashboard.textContent = t('nav.dashboard');
+  if (navLogout) navLogout.textContent = t('nav.logout');
+  if (navLanguage) navLanguage.textContent = t('nav.language');
+
+  // Coach page content
+  const coachTitle = document.getElementById('coach-title');
+  const coachSubtitle = document.getElementById('coach-subtitle');
+  const transcriptTitle = document.getElementById('transcript-title');
+  const analysisTitle = document.getElementById('analysis-title');
+  const askCoachTitle = document.getElementById('ask-coach-title');
+  const askCoachSubtitle = document.getElementById('ask-coach-subtitle');
+  const sendButton = document.getElementById('send-button');
+  const recentConversationsTitle = document.getElementById('recent-conversations-title');
+  const recentConversationsSubtitle = document.getElementById('recent-conversations-subtitle');
+  const loadingText = document.getElementById('loading-text');
+  const messageInput = document.getElementById('message-input') as HTMLInputElement;
+
+  if (coachTitle) coachTitle.textContent = t('coach.title');
+  if (coachSubtitle) coachSubtitle.textContent = t('coach.subtitle');
+  if (transcriptTitle) transcriptTitle.textContent = t('coach.conversation_transcript');
+  if (analysisTitle) analysisTitle.textContent = t('coach.ai_coach_analysis');
+  if (askCoachTitle) askCoachTitle.textContent = t('coach.ask_coach');
+  if (askCoachSubtitle) askCoachSubtitle.textContent = t('coach.ask_coach_subtitle');
+  if (sendButton) sendButton.textContent = t('common.send');
+  if (recentConversationsTitle) recentConversationsTitle.textContent = t('coach.recent_conversations');
+  if (recentConversationsSubtitle) recentConversationsSubtitle.textContent = t('coach.recent_conversations_subtitle');
+  if (loadingText) loadingText.textContent = t('common.loading');
+  if (messageInput) messageInput.placeholder = t('coach.coach_placeholder');
+}
 
 // ---------------------- Coach Page Logic ----------------------
 (function initCoach() {
@@ -94,7 +140,7 @@ import '../style.css'
    */
   async function loadRecentConversations() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/me/history`, {
+      const response = await fetch(`${API_BASE_URL}/api/me/history?lang=${getCurrentLanguage()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -106,14 +152,14 @@ import '../style.css'
 
       const evaluations = await response.json()
       
-      // Get the last 5 conversations
-      const recentEvaluations = evaluations.slice(0, 5)
+      // Get the last 6 conversations
+      const recentEvaluations = evaluations.slice(0, 6)
 
       if (recentConversationsList) {
         recentConversationsList.innerHTML = ''
 
         if (recentEvaluations.length === 0) {
-          recentConversationsList.innerHTML = '<p class="text-center">No conversations found. Complete some scenarios first!</p>'
+          recentConversationsList.innerHTML = `<p class="text-center">${t('coach.no_conversations')}</p>`
           return
         }
 
@@ -125,7 +171,7 @@ import '../style.css'
     } catch (error) {
       console.error('Error loading recent conversations:', error)
       if (recentConversationsList) {
-        recentConversationsList.innerHTML = '<p class="error-message">Failed to load recent conversations.</p>'
+        recentConversationsList.innerHTML = `<p class="error-message">${t('coach.failed_load_conversations')}</p>`
       }
     }
   }
@@ -209,7 +255,7 @@ import '../style.css'
   async function loadTranscript() {
     if (!currentEvaluationId) {
       if (transcriptView) {
-        transcriptView.innerHTML = '<div class="transcript-header"><h3>No Conversation Selected</h3><p>Please select a conversation from the list below to view the transcript.</p></div>'
+        transcriptView.innerHTML = `<div class="transcript-header"><h3>${t('coach.no_conversation_selected')}</h3><p>${t('coach.select_conversation')}</p></div>`
       }
       return
     }
@@ -249,10 +295,10 @@ import '../style.css'
 
         transcriptView.innerHTML = `
           <div class="transcript-header">
-            <h3>Conversation Transcript</h3>
-            <p>Scenario: ${evaluation.scenario_id}</p>
-            <p>Date: ${new Date(evaluation.created_at).toLocaleDateString()}</p>
-            <p>Overall Score: ${evaluation.overall_score}/5</p>
+            <h3>${t('coach.conversation_transcript')}</h3>
+            <p>${t('coach.scenario_info', {scenario: evaluation.scenario_id})}</p>
+            <p>${t('coach.created_at', {date: new Date(evaluation.created_at).toLocaleDateString()})}</p>
+            <p>${t('coach.coach_score', {score: evaluation.overall_score})}</p>
           </div>
           <div class="transcript-messages">
             ${formattedTranscript}
@@ -266,7 +312,7 @@ import '../style.css'
         if (!document.getElementById('get-feedback-button')) {
           const feedbackButton = document.createElement('button')
           feedbackButton.id = 'get-feedback-button'
-          feedbackButton.textContent = 'Get Professional Feedback'
+          feedbackButton.textContent = t('coach.get_professional_feedback')
           feedbackButton.className = 'feedback-button primary'
           
           const buttonContainer = document.createElement('div')
@@ -284,7 +330,7 @@ import '../style.css'
     } catch (error) {
       console.error('Error loading transcript:', error)
       if (transcriptView) {
-        transcriptView.innerHTML = '<p class="error-message">Failed to load conversation transcript.</p>'
+        transcriptView.innerHTML = `<p class="error-message">${t('coach.failed_load_transcript')}</p>`
       }
     }
   }
@@ -294,7 +340,7 @@ import '../style.css'
    */
   async function generateFeedback() {
     if (!currentEvaluationId) {
-      alert('Please select a conversation first')
+      alert(t('coach.select_conversation_first'))
       return
     }
 
@@ -302,7 +348,7 @@ import '../style.css'
     
     if (feedbackButton) {
       feedbackButton.disabled = true
-      feedbackButton.textContent = 'Generating Feedback...'
+              feedbackButton.textContent = t('coach.generating_feedback')
     }
 
     showLoading(true)
@@ -315,7 +361,8 @@ import '../style.css'
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          evaluation_id: parseInt(currentEvaluationId!)
+          evaluation_id: parseInt(currentEvaluationId!),
+          lang: getCurrentLanguage()
         })
       })
 
@@ -354,13 +401,13 @@ import '../style.css'
     } catch (error) {
       console.error('Error generating feedback:', error)
       if (coachFeedbackDisplay) {
-        coachFeedbackDisplay.innerHTML = '<p class="error-message">Failed to generate feedback. Please try again.</p>'
+        coachFeedbackDisplay.innerHTML = `<p class="error-message">${t('coach.failed_generate_feedback')}</p>`
       }
     } finally {
       showLoading(false)
       if (feedbackButton) {
         feedbackButton.disabled = false
-        feedbackButton.textContent = 'Get Professional Feedback'
+        feedbackButton.textContent = t('coach.get_professional_feedback')
       }
     }
   }
@@ -386,7 +433,8 @@ import '../style.css'
         },
         body: JSON.stringify({
           question: userQuestion,
-          chat_history: chatHistory
+          chat_history: chatHistory,
+          lang: getCurrentLanguage()
         })
       })
 
@@ -404,54 +452,30 @@ import '../style.css'
         // Update chat history
         chatHistory.push(userQuestion)
         chatHistory.push(coachResponse)
-        
-        // Keep chat history manageable (last 10 exchanges)
-        if (chatHistory.length > 20) {
-          chatHistory.splice(0, 4) // Remove 2 oldest exchanges
-        }
       }
 
     } catch (error) {
-      console.error('Error in coach chat:', error)
-      addMessageToChatWindow('assistant', 'Sorry, I encountered an error. Please try asking your question again.')
+      console.error('Error chatting with coach:', error)
+      addMessageToChatWindow('assistant', 'Sorry, I encountered an error. Please try again.')
     }
   })
 
-  // Initialize the page
+  // Load recent conversations on page load
   loadRecentConversations()
-  
-  // If evaluation_id is provided in URL, load that conversation
+
+  // If evaluation_id is provided in URL, load that transcript
   if (currentEvaluationId) {
     loadTranscript()
-  } else {
-    // Show empty state
-    if (transcriptView) {
-      transcriptView.innerHTML = `
-        <div class="transcript-header">
-          <h3>No Conversation Selected</h3>
-          <p>Please select a conversation from the recent conversations below to view the transcript and get AI Coach feedback.</p>
-        </div>
-      `
-    }
-    if (coachFeedbackDisplay) {
-      coachFeedbackDisplay.innerHTML = `
-        <div class="transcript-header">
-          <h3>Ready for Analysis</h3>
-          <p>Select a conversation to get comprehensive AI Coach feedback on your communication skills.</p>
-        </div>
-      `
-    }
   }
-
-  // Add initial welcome message to chat
-  addMessageToChatWindow('assistant', 'Hello! I\'m your AI Coach. I\'m here to help you improve your medical communication skills. Feel free to ask me any questions about communication techniques, or select a conversation above to get detailed feedback.')
-
 })()
 
-// Make functions available globally for onclick handlers
+// Extend Window interface to include our global functions
 declare global {
   interface Window {
     loadConversation: (evaluationId: number) => void;
     getFeedbackForConversation: (evaluationId: number) => void;
   }
 }
+
+// Initialize translations when DOM is loaded
+document.addEventListener('DOMContentLoaded', updateUIText)

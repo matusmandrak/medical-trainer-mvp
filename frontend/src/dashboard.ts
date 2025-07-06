@@ -1,5 +1,6 @@
 import '../style.css'
 import Chart from 'chart.js/auto'
+import { t, getCurrentLanguage, translatorReady } from './translator'
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -170,11 +171,51 @@ function createRadarChart(
 }
 
 // --------------------------------------------------
+// Translation update function
+// --------------------------------------------------
+async function updateUIText() {
+  // Wait for translator to be ready
+  try {
+    await translatorReady;
+  } catch (error) {
+    console.error('Failed to load translations:', error);
+  }
+
+  // Navigation
+  const navScenarios = document.getElementById('nav-scenarios');
+  const navLogout = document.getElementById('nav-logout');
+  const navLanguage = document.getElementById('nav-language');
+
+  if (navScenarios) navScenarios.textContent = t('nav.scenarios');
+  if (navLogout) navLogout.textContent = t('nav.logout');
+  if (navLanguage) navLanguage.textContent = t('nav.language');
+
+  // Dashboard content
+  const dashboardTitle = document.getElementById('dashboard-title');
+  const backToScenarios = document.getElementById('back-to-scenarios');
+  const empathyTitle = document.getElementById('empathy-title');
+  const informationGatheringTitle = document.getElementById('information-gathering-title');
+  const clarityTitle = document.getElementById('clarity-title');
+  const collaborationTitle = document.getElementById('collaboration-title');
+  const difficultConversationsTitle = document.getElementById('difficult-conversations-title');
+  const overallSkillProfileTitle = document.getElementById('overall-skill-profile-title');
+
+  if (dashboardTitle) dashboardTitle.textContent = t('dashboard.title');
+  if (backToScenarios) backToScenarios.textContent = t('nav.back_to_scenarios');
+  if (empathyTitle) empathyTitle.textContent = t('dashboard.empathy');
+  if (informationGatheringTitle) informationGatheringTitle.textContent = t('dashboard.information_gathering');
+  if (clarityTitle) clarityTitle.textContent = t('dashboard.clarity');
+  if (collaborationTitle) collaborationTitle.textContent = t('dashboard.collaboration');
+  if (difficultConversationsTitle) difficultConversationsTitle.textContent = t('dashboard.difficult_conversations');
+  if (overallSkillProfileTitle) overallSkillProfileTitle.textContent = t('dashboard.overall_skill_profile');
+}
+
+// --------------------------------------------------
 // Main loader
 // --------------------------------------------------
 async function loadHistory() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/me/history`, {
+    const res = await fetch(`${API_BASE_URL}/api/me/history?lang=${getCurrentLanguage()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -247,4 +288,5 @@ async function loadHistory() {
   }
 }
 
+document.addEventListener('DOMContentLoaded', updateUIText)
 loadHistory() 

@@ -13,8 +13,23 @@
         <a href="/" class="nav__logo">MedCommTrainer</a>
         <div class="nav__menu">
           <ul class="nav__list">
-            <li class="nav__item"><a href="/scenarios" class="nav__link">Scenarios</a></li>
-            <li class="nav__item"><a href="/logout" class="nav__link">Logout</a></li>
+            <li class="nav__item"><a href="/scenarios" class="nav__link" id="nav-scenarios">Scenarios</a></li>
+            <li class="nav__item"><a href="/logout" class="nav__link" id="nav-logout">Logout</a></li>
+            
+            <!-- Language Switcher -->
+            <li class="nav__item nav__dropdown">
+              <a href="#" class="nav__link nav__dropdown-toggle">
+                🌐 <span id="nav-language">Language</span>
+                <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <ul class="nav__dropdown-menu">
+                <li><button data-language="en" class="nav__dropdown-link language-btn">English</button></li>
+                <li><button data-language="cs" class="nav__dropdown-link language-btn">Čeština</button></li>
+                <li><button data-language="sk" class="nav__dropdown-link language-btn">Slovenčina</button></li>
+              </ul>
+            </li>
           </ul>
         </div>
       </nav>
@@ -22,33 +37,33 @@
     <main class="app-main">
       <div class="container">
         <div class="page-header">
-          <h1>My Progress Dashboard</h1>
-          <a href="/scenarios" class="button button--secondary">&larr; Back to Scenarios</a>
+          <h1 id="dashboard-title">My Progress Dashboard</h1>
+          <a href="/scenarios" class="button button--secondary" id="back-to-scenarios">&larr; Back to Scenarios</a>
         </div>
         <div class="dashboard-grid">
           <div class="chart-card">
-            <h3>Empathy</h3>
+            <h3 id="empathy-title">Empathy</h3>
             <div class="chart-container"><canvas id="empathy-chart"></canvas></div>
           </div>
           <div class="chart-card">
-            <h3>Information Gathering</h3>
+            <h3 id="information-gathering-title">Information Gathering</h3>
             <div class="chart-container"><canvas id="information-gathering-chart"></canvas></div>
           </div>
           <div class="chart-card">
-            <h3>Clarity</h3>
+            <h3 id="clarity-title">Clarity</h3>
             <div class="chart-container"><canvas id="clarity-chart"></canvas></div>
           </div>
           <div class="chart-card">
-            <h3>Collaboration</h3>
+            <h3 id="collaboration-title">Collaboration</h3>
             <div class="chart-container"><canvas id="collaboration-chart"></canvas></div>
           </div>
           <div class="chart-card">
-            <h3>Difficult Conversations</h3>
+            <h3 id="difficult-conversations-title">Difficult Conversations</h3>
             <div class="chart-container"><canvas id="difficult-conversations-chart"></canvas></div>
           </div>
         </div>
         <div class="dashboard-summary-section">
-          <h2 class="summary-title">Overall Skill Profile</h2>
+          <h2 class="summary-title" id="overall-skill-profile-title">Overall Skill Profile</h2>
           <div class="chart-card radar-card">
             <div class="chart-container">
               <canvas id="skill-radar-chart"></canvas>
@@ -57,6 +72,7 @@
         </div>
       </div>
     </main>
+    <script type="module" src="/src/translator.ts"></script>
     <script type="module" src="/src/dashboard.ts"></script>
   </body>
 </html> 

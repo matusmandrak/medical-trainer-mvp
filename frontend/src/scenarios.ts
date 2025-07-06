@@ -1,4 +1,7 @@
 import '../style.css'
+import { t, getCurrentLanguage, translatorReady } from './translator'
+
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 
 // Define the structure of a scenario object
 interface Scenario {
@@ -9,70 +12,75 @@ interface Scenario {
   description: string
 }
 
-// A static list of five scenarios with descriptions
-const scenariosData: Scenario[] = [
-  {
-    id: 'S001',
-    title: 'The Asymptomatic Hypertensive',
-    learning_path: 'Managing Medication Adherence',
-    difficulty: 'Medium',
-    description:
-      'Confront a pleasant but firm patient who feels perfectly healthy despite their clinical data showing hypertension. Your goal is to uncover their reasons for non-adherence and collaboratively agree on a treatment plan.',
-  },
-  {
-    id: 'S002',
-    title: 'The Overcrowded Pediatric Ward',
-    learning_path: 'Conflict Management & Setting Boundaries',
-    difficulty: 'Hard',
-    description:
-      'Navigate a high-emotion conflict with the terrified parents of a sick child. Your goal is to de-escalate their anger and gain cooperation when hospital policy prevents you from giving them what they want.',
-  },
-  {
-    id: 'S003',
-    title: 'The Antibiotic Skeptic',
-    learning_path: 'Managing Misinformation',
-    difficulty: 'Hard',
-    description:
-      'Build trust with an intelligent patient who is deeply skeptical of Western medicine. Can you navigate their beliefs about natural remedies to negotiate treatment for a serious bacterial infection?',
-  },
-  {
-    id: 'S004',
-    title: 'The Hidden Agenda',
-    learning_path: 'Information Gathering',
-    difficulty: 'Medium',
-    description:
-      "Your patient reveals a potentially serious symptom just as you have your hand on the doorknob. Can you manage the patient's embarrassment and skillfully re-engage to gather critical information?",
-  },
-  {
-    id: 'S005',
-    title: 'The Self-Diagnosed Patient',
-    learning_path: 'Managing Patient Expectations',
-    difficulty: 'Medium',
-    description:
-      'Face a data-driven patient who has already diagnosed themselves using an AI and now just wants a prescription. Can you validate their effort while explaining the vital need for a physical examination?',
-  },
-]
-
 // Find the container element on the page
 const listContainer = document.getElementById('scenario-list') as HTMLElement | null
 
+// Translation update function
+async function updateUIText() {
+  // Wait for translator to be ready
+  try {
+    await translatorReady;
+  } catch (error) {
+    console.error('Failed to load translations:', error);
+  }
+
+  // Navigation
+  const navDashboard = document.getElementById('nav-dashboard');
+  const navLogout = document.getElementById('nav-logout');
+  const navLanguage = document.getElementById('nav-language');
+
+  if (navDashboard) navDashboard.textContent = t('nav.dashboard');
+  if (navLogout) navLogout.textContent = t('nav.logout');
+  if (navLanguage) navLanguage.textContent = t('nav.language');
+
+  // Scenarios page content
+  const scenariosTitle = document.getElementById('scenarios-title');
+  const scenariosSubtitle = document.getElementById('scenarios-subtitle');
+
+  if (scenariosTitle) scenariosTitle.textContent = t('scenarios.title');
+  if (scenariosSubtitle) scenariosSubtitle.textContent = t('scenarios.subtitle');
+}
+
 // Function to load and display the scenarios
-function loadScenarios() {
+async function loadScenarios() {
   if (!listContainer) {
     console.error('#scenario-list element not found')
     return
   }
 
+  let scenariosData: Scenario[] = []
+  
+  try {
+    // Fetch from API with language parameter - no fallback to static data
+    const response = await fetch(`${API_BASE_URL}/api/scenarios?lang=${getCurrentLanguage()}`)
+    if (response.ok) {
+      scenariosData = await response.json()
+      console.log('Scenarios loaded from API:', scenariosData)
+    } else {
+      throw new Error(`API request failed with status ${response.status}`)
+    }
+  } catch (error) {
+    console.error('Failed to load scenarios from API:', error)
+    listContainer.innerHTML = `<div class="error-message">
+      <h3>Failed to load scenarios</h3>
+      <p>Unable to connect to the server. Please try again later.</p>
+      <button onclick="window.location.reload()" class="button-primary">Retry</button>
+    </div>`
+    return
+  }
+
   if (!scenariosData.length) {
-    listContainer.innerHTML = 'No scenarios available at the moment.'
+    listContainer.innerHTML = `<div class="no-scenarios-message">
+      <h3>${t('scenarios.no_scenarios')}</h3>
+    </div>`
     return
   }
 
   // Clear any existing content
   listContainer.innerHTML = ''
 
-  // Loop through our static data and create a card for each scenario
-  scenariosData.forEach((scenario) => {
+  // Loop through our data and create a card for each scenario
+  scenariosData.forEach((scenario: Scenario) => {
     const cardLink = document.createElement('a')
     cardLink.href = `/trainer?scenario=${scenario.id}`
     cardLink.className = 'scenario-card'
@@ -94,4 +102,7 @@ function loadScenarios() {
 }
 
 // Load scenarios on page load
-loadScenarios()
+document.addEventListener('DOMContentLoaded', async () => {
+  await updateUIText()
+  await loadScenarios()
+})

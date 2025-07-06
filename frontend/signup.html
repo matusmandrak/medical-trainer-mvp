@@ -23,22 +23,38 @@
           <!-- Desktop menu -->
           <div class="nav__menu" id="nav-menu">
             <ul class="nav__list">
-              <li class="nav__item nav__dropdown">
-                <a href="#" class="nav__link nav__dropdown-toggle">
-                  Solutions
-                  <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </a>
-                <ul class="nav__dropdown-menu">
-                  <li><a href="/scenarios" class="nav__dropdown-link">Scenarios</a></li>
-                </ul>
-              </li>
-              <li class="nav__item"><a href="/" class="nav__link">Pricing</a></li>
-              <li class="nav__item"><a href="/about" class="nav__link">About Us</a></li>
-              <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
-              <li class="nav__item"><a href="/signup" class="nav__link">Sign Up</a></li>
-              <li class="nav__item"><a href="/" class="nav__link button button--ghost">Request a Demo</a></li>
+                          <li class="nav__item nav__dropdown">
+              <a href="#" class="nav__link nav__dropdown-toggle">
+                <span id="nav-solutions">Solutions</span>
+                <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <ul class="nav__dropdown-menu">
+                <li><a href="/scenarios" class="nav__dropdown-link" id="nav-scenarios">Scenarios</a></li>
+              </ul>
+            </li>
+            <li class="nav__item"><a href="/" class="nav__link" id="nav-pricing">Pricing</a></li>
+            <li class="nav__item"><a href="/about" class="nav__link" id="nav-about">About Us</a></li>
+            <li class="nav__item"><a href="/login" class="nav__link" id="nav-login">Login</a></li>
+            <li class="nav__item"><a href="/signup" class="nav__link" id="nav-signup">Sign Up</a></li>
+            
+            <!-- Language Switcher -->
+            <li class="nav__item nav__dropdown">
+              <a href="#" class="nav__link nav__dropdown-toggle">
+                🌐 <span id="nav-language">Language</span>
+                <svg class="nav__dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <ul class="nav__dropdown-menu">
+                <li><button data-language="en" class="nav__dropdown-link language-btn">English</button></li>
+                <li><button data-language="cs" class="nav__dropdown-link language-btn">Čeština</button></li>
+                <li><button data-language="sk" class="nav__dropdown-link language-btn">Slovenčina</button></li>
+              </ul>
+            </li>
+            
+            <li class="nav__item"><a href="/" class="nav__link button button--ghost" id="nav-demo">Request a Demo</a></li>
             </ul>
           </div>
         </nav>
@@ -47,22 +63,22 @@
       <!-- Auth Main Content -->
       <main class="auth-main">
         <div class="auth-container">
-          <h1 class="auth-container__title">Join MedCommTrainer</h1>
+          <h1 class="auth-container__title" id="signup-title">Join MedCommTrainer</h1>
           <form id="signup-form" class="form">
             <div class="form-group">
-              <label for="name" class="form-label">Full Name</label>
+              <label for="name" class="form-label" id="name-label">Full Name</label>
               <input type="text" id="name" class="form-input" required />
             </div>
             <div class="form-group">
-              <label for="email" class="form-label">Email Address</label>
+              <label for="email" class="form-label" id="email-label">Email Address</label>
               <input type="email" id="email" class="form-input" required />
             </div>
             <div class="form-group">
-              <label for="password" class="form-label">Password</label>
+              <label for="password" class="form-label" id="password-label">Password</label>
               <input type="password" id="password" class="form-input" required />
             </div>
-            <button type="submit" class="button button--primary">Sign Up</button>
-            <p class="auth-link">Already have an account? <a href="/login">Sign in here.</a></p>
+            <button type="submit" class="button button--primary" id="signup-button">Sign Up</button>
+            <p class="auth-link"><span id="signup-link-text">Already have an account?</span> <a href="/login" id="signin-link">Sign in here.</a></p>
           </form>
         </div>
       </main>
@@ -99,6 +115,8 @@
         }
       });
     </script>
+    
+    <script type="module" src="/src/translator.ts"></script>
     <script type="module" src="/src/signup.ts"></script>
   </body>
 </html> 
